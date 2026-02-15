@@ -1,4 +1,4 @@
-# Change - 교대근무자를 위한 스마트 스케줄 & AI 건강코치
+# Change - 교대근무자를 위한 스마트 스케줄 & 건강코치
 
 [![커피 한 잔 사주기](https://img.shields.io/badge/☕%20커피%20한%20잔%20사주기-카카오페이-FFCD00?style=for-the-badge)](https://qr.kakaopay.com/Ej7lJCKxa)
 
@@ -43,7 +43,7 @@
 - 서카디안 건강 점수 (수면 시간 + 품질 + 일관성 기반 산출)
 - 권장 취침/기상/낮잠 시간표
 
-### 4. AI 건강 코치
+### 4. 건강 코치
 - 5개 카테고리: 수면, 식사, 운동, 카페인, 빛 관리
 - 현재 근무 유형 + 수면 데이터 기반 맞춤 조언 자동 생성
 - 우선순위 기반 팁 정렬
@@ -104,7 +104,7 @@ change/
     │   │   ├── sleep_tracker_screen.dart       # 수면 기록 + 주간 차트
     │   │   └── sleep_stats_screen.dart         # 수면 통계 상세
     │   ├── health/
-    │   │   ├── health_coach_screen.dart        # AI 건강 코치 메인
+    │   │   ├── health_coach_screen.dart        # 건강 코치 메인
     │   │   └── circadian_screen.dart           # 서카디안 리듬 상세
     │   ├── settings/
     │   │   └── settings_screen.dart            # 설정 (알림, 데이터, 앱 정보)
@@ -177,7 +177,7 @@ change/
 
 | 파일 | 설명 |
 |------|------|
-| `home_screen.dart` | 인사말, 오늘 근무 카드, 수면 요약/서카디안 점수 카드, 이번 주 근무 가로 스크롤, AI 건강 팁 리스트 |
+| `home_screen.dart` | 인사말, 오늘 근무 카드, 수면 요약/서카디안 점수 카드, 이번 주 근무 가로 스크롤, 건강 팁 리스트 |
 | `calendar_screen.dart` | TableCalendar 월간 뷰, 근무 타입 범례, 패턴 선택 바텀시트, 근무 추가/수정/삭제 |
 | `sleep_tracker_screen.dart` | 오늘의 수면 카드, 주간 바차트, 근무별 평균 수면 진행바, 최근 기록 리스트, 수면 기록 바텀시트(시간+품질) |
 | `sleep_stats_screen.dart` | 평균 수면/품질/기록수 요약, 30일 추이 차트, 품질 분포 바, 근무 유형별 분석 |
@@ -255,7 +255,7 @@ flutter build apk
 #### 상태 관리
 - `ScheduleProvider` 구현 (월별 로드, 근무 추가/삭제, 패턴 일괄 적용)
 - `SleepProvider` 구현 (기록 CRUD, 근무별 평균 집계)
-- `HealthProvider` 구현 (AI 팁 생성 트리거, 서카디안 위상/점수 관리)
+- `HealthProvider` 구현 (건강 팁 생성 트리거, 서카디안 위상/점수 관리)
 
 #### 서비스 레이어
 - `AiHealthService` 건강 코치 엔진 구현 (5개 카테고리 × 근무 유형별 맞춤 조언)
@@ -268,7 +268,7 @@ flutter build apk
 - 근무 캘린더 화면 + 패턴 선택/근무 추가 바텀시트 (`calendar_screen.dart`)
 - 수면 트래커 화면 + 기록 입력 바텀시트 (`sleep_tracker_screen.dart`)
 - 수면 통계 상세 화면 (`sleep_stats_screen.dart`)
-- AI 건강 코치 화면 + 카테고리 필터 (`health_coach_screen.dart`)
+- 건강 코치 화면 + 카테고리 필터 (`health_coach_screen.dart`)
 - 서카디안 리듬 상세 화면 + 24시간 시계 (`circadian_screen.dart`)
 - 설정 화면 (`settings_screen.dart`)
 - 3단계 온보딩 화면 (`onboarding_screen.dart`)
