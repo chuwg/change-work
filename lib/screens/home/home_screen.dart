@@ -211,7 +211,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'AI 건강 코치',
+                        '건강 코치',
                         style: TextStyle(
                           color: AppTheme.textPrimary,
                           fontSize: 18,
@@ -226,7 +226,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
-                          'AI',
+                          '가이드',
                           style: TextStyle(
                             color: AppTheme.primary,
                             fontSize: 11,

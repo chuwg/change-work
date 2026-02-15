@@ -48,7 +48,7 @@ class _HealthCoachScreenState extends ConsumerState<HealthCoachScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'AI 건강 코치',
+                      '건강 코치',
                       style: TextStyle(
                         color: AppTheme.textPrimary,
                         fontSize: 24,

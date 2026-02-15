@@ -154,7 +154,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
           const SizedBox(height: 12),
           const Text(
-            '교대근무자를 위한 스마트 스케줄 관리와\nAI 건강 코치가 당신의 건강을 지켜드립니다',
+            '교대근무자를 위한 스마트 스케줄 관리와\n건강 코치가 당신의 건강을 지켜드립니다',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppTheme.textSecondary,
@@ -382,7 +382,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 SizedBox(height: 16),
                 _FeatureRow(
                   icon: Icons.psychology_rounded,
-                  title: 'AI 건강 코치',
+                  title: '건강 코치',
                   description: '근무 패턴에 맞는 맞춤 건강 가이드를 제공합니다',
                 ),
               ],
