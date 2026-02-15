@@ -21,7 +21,9 @@ class _HealthCoachScreenState extends ConsumerState<HealthCoachScreen> {
   @override
   void initState() {
     super.initState();
-    try { ref.read(healthProvider.notifier).refreshHealthData(); } catch (_) {}
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try { ref.read(healthProvider.notifier).refreshHealthData(); } catch (_) {}
+    });
   }
 
   @override

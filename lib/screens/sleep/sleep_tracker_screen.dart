@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme.dart';
 import '../../providers/sleep_provider.dart';
 import '../../providers/schedule_provider.dart';
+import '../../providers/health_sync_provider.dart';
 import '../../utils/helpers.dart';
 import '../../widgets/sleep_chart.dart';
 
@@ -18,7 +20,14 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
   @override
   void initState() {
     super.initState();
-    try { ref.read(sleepProvider.notifier).loadRecords(); } catch (_) {}
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try { ref.read(sleepProvider.notifier).loadRecords(); } catch (_) {}
+      // Auto-sync from HealthKit when sync is enabled
+      final healthSync = ref.read(healthSyncProvider);
+      if (healthSync.syncEnabled && !healthSync.isSyncing) {
+        ref.read(healthSyncProvider.notifier).syncNow();
+      }
+    });
   }
 
   @override
@@ -128,14 +137,59 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        ElevatedButton.icon(
-                          onPressed: () => _showAddSleepRecord(context),
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('수면 기록하기'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white24,
-                            foregroundColor: Colors.white,
-                          ),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: () => _showAddSleepRecord(context),
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text('수면 기록하기'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white24,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                            if (!ref.watch(healthSyncProvider).syncEnabled)
+                              ElevatedButton.icon(
+                                onPressed: () => _requestHealthSync(context),
+                                icon: const Icon(Icons.watch_rounded, size: 18),
+                                label: Text(Platform.isIOS
+                                    ? 'Apple Health에서 가져오기'
+                                    : 'Health Connect에서 가져오기'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primary
+                                      .withValues(alpha: 0.3),
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            if (ref.watch(healthSyncProvider).syncEnabled &&
+                                ref.watch(healthSyncProvider).isSyncing)
+                              const Padding(
+                                padding: EdgeInsets.only(left: 8),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      '동기화 중...',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
                         ),
                       ],
                     ],
@@ -390,6 +444,36 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _requestHealthSync(BuildContext context) async {
+    final granted = await ref
+        .read(healthSyncProvider.notifier)
+        .toggleSync(true);
+    if (!granted && context.mounted) {
+      final settingsName = Platform.isIOS ? '설정 > 건강 > Change' : '설정 > Health Connect';
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: AppTheme.surfaceDarkElevated,
+          title: const Text(
+            '건강 데이터 권한 필요',
+            style: TextStyle(color: AppTheme.textPrimary),
+          ),
+          content: Text(
+            '수면 데이터를 가져오려면 건강 데이터 접근 권한이 필요합니다.\n\n'
+            '$settingsName에서 권한을 허용해주세요.',
+            style: const TextStyle(color: AppTheme.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('확인'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   void _showAddSleepRecord(BuildContext context) {

@@ -67,11 +67,12 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
   }
 
   /// Toggle health data sync ON/OFF.
-  Future<void> toggleSync(bool enabled) async {
+  /// Returns false if authorization was denied.
+  Future<bool> toggleSync(bool enabled) async {
     if (enabled) {
       // Request authorization first
       final authorized = await _healthService.requestAuthorization();
-      if (!authorized) return;
+      if (!authorized) return false;
 
       state = state.copyWith(syncEnabled: true, isAuthorized: true);
       final prefs = await SharedPreferences.getInstance();
@@ -87,6 +88,7 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(AppConstants.healthSyncEnabledKey, false);
     }
+    return true;
   }
 
   /// Manual sync trigger.

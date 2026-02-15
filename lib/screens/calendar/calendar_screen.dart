@@ -24,7 +24,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   void initState() {
     super.initState();
     _selectedDay = DateTime.now();
-    _loadMonth();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadMonth());
   }
 
   void _loadMonth() {

@@ -162,8 +162,11 @@ class HealthDataService {
 
       final durationHours =
           session.wakeTime.difference(session.bedTime).inMinutes / 60.0;
-      // Estimate quality based on duration
-      final quality = _estimateQuality(durationHours);
+
+      // Look up shift type for quality estimation
+      final shift = await db.getShiftForDate(date);
+      final shiftType = shift?.type;
+      final quality = _estimateQuality(durationHours, shiftType: shiftType);
 
       final record = SleepRecord(
         id: const Uuid().v4(),
@@ -171,6 +174,7 @@ class HealthDataService {
         bedTime: session.bedTime,
         wakeTime: session.wakeTime,
         quality: quality,
+        shiftType: shiftType,
         source: source,
       );
 
@@ -185,7 +189,16 @@ class HealthDataService {
     return DateTime(dt.year, dt.month, dt.day).toIso8601String().split('T')[0];
   }
 
-  int _estimateQuality(double hours) {
+  int _estimateQuality(double hours, {String? shiftType}) {
+    // Night/evening shift workers have shorter sleep; adjust thresholds
+    if (shiftType == 'night' || shiftType == 'evening') {
+      if (hours >= 7.0) return 5;
+      if (hours >= 6.0) return 4;
+      if (hours >= 5.0) return 3;
+      if (hours >= 4.0) return 2;
+      return 1;
+    }
+    // Standard thresholds for day shift / off days
     if (hours >= 7.5) return 5;
     if (hours >= 6.5) return 4;
     if (hours >= 5.5) return 3;
