@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../models/shift.dart';
 import '../models/shift_pattern.dart';
@@ -75,6 +77,22 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
 
   ScheduleNotifier(this._db) : super(const ScheduleState());
 
+  /// Get shift times for a type, using custom times if set, otherwise defaults.
+  static Future<Map<String, String>?> getShiftTimes(String type) async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(AppConstants.customShiftTimesKey);
+    if (saved != null) {
+      final decoded = jsonDecode(saved) as Map<String, dynamic>;
+      final typeMap = decoded[type] as Map<String, dynamic>?;
+      if (typeMap != null) {
+        return Map<String, String>.from(typeMap);
+      }
+    }
+    return AppConstants.defaultShiftTimes[type] != null
+        ? Map<String, String>.from(AppConstants.defaultShiftTimes[type]!)
+        : null;
+  }
+
   Future<void> loadShiftsForMonth(int year, int month) async {
     state = state.copyWith(isLoading: true);
     final shifts = await _db.getShiftsForMonth(year, month);
@@ -88,7 +106,7 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
 
   Future<void> addShift(DateTime date, String type, {String? note}) async {
     final dateKey = DateTime(date.year, date.month, date.day);
-    final times = AppConstants.defaultShiftTimes[type];
+    final times = await getShiftTimes(type);
     final shift = Shift(
       id: _uuid.v4(),
       date: dateKey,
@@ -123,12 +141,20 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
     );
     final totalDays = endDate.difference(startDate).inDays;
 
+    // Load custom times once
+    final prefs = await SharedPreferences.getInstance();
+    final savedTimes = prefs.getString(AppConstants.customShiftTimesKey);
+    final customTimes = savedTimes != null
+        ? (jsonDecode(savedTimes) as Map<String, dynamic>)
+            .map((k, v) => MapEntry(k, Map<String, String>.from(v as Map)))
+        : <String, Map<String, String>>{};
+
     for (int i = 0; i < totalDays; i++) {
       final date = startDate.add(Duration(days: i));
       final dateKey = DateTime(date.year, date.month, date.day);
       final patternIndex = i % pattern.pattern.length;
       final type = pattern.pattern[patternIndex];
-      final times = AppConstants.defaultShiftTimes[type];
+      final times = customTimes[type] ?? AppConstants.defaultShiftTimes[type];
 
       shifts.add(Shift(
         id: _uuid.v4(),

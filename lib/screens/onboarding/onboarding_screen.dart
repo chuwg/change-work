@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme.dart';
 import '../../models/shift_pattern.dart';
+import '../../models/user_profile.dart';
 import '../../providers/schedule_provider.dart';
+import '../../services/database_service.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   final VoidCallback? onComplete;
@@ -18,9 +21,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _currentPage = 0;
   String? _selectedPatternId;
 
+  // Profile fields
+  final _birthYearController = TextEditingController();
+  String? _selectedGender;
+
+  static const _totalPages = 4;
+
   @override
   void dispose() {
     _pageController.dispose();
+    _birthYearController.dispose();
     super.dispose();
   }
 
@@ -34,7 +44,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Row(
-                children: List.generate(3, (i) {
+                children: List.generate(_totalPages, (i) {
                   return Expanded(
                     child: Container(
                       height: 3,
@@ -59,6 +69,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
                   _buildWelcomePage(),
+                  _buildProfilePage(),
                   _buildPatternPage(),
                   _buildReadyPage(),
                 ],
@@ -84,17 +95,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   if (_currentPage > 0) const SizedBox(width: 12),
                   Expanded(
-                    flex: _currentPage == 0 ? 1 : 1,
                     child: ElevatedButton(
                       onPressed: () async {
-                        if (_currentPage < 2) {
+                        if (_currentPage < _totalPages - 1) {
+                          // Save profile on leaving profile page
+                          if (_currentPage == 1) {
+                            await _saveProfile();
+                          }
                           _pageController.nextPage(
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeInOut,
                           );
                         } else {
-                          // Apply selected pattern (default to 2-shift if none selected)
-                          final patternId = _selectedPatternId ?? 'preset_2shift';
+                          // Apply selected pattern
+                          final patternId =
+                              _selectedPatternId ?? 'preset_2shift';
                           final pattern = ShiftPattern.presets.firstWhere(
                             (p) => p.id == patternId,
                           );
@@ -112,7 +127,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         }
                       },
                       child: Text(
-                          _currentPage == 2 ? '시작하기' : '다음'),
+                          _currentPage == _totalPages - 1 ? '시작하기' : '다음'),
                     ),
                   ),
                 ],
@@ -122,6 +137,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _saveProfile() async {
+    final birthYear = int.tryParse(_birthYearController.text);
+    if (birthYear == null && _selectedGender == null) return;
+
+    final profile = UserProfile(
+      birthYear: birthYear,
+      gender: _selectedGender,
+    );
+    await DatabaseService.instance.saveUserProfile(profile);
   }
 
   Widget _buildWelcomePage() {
@@ -174,6 +200,155 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProfilePage() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '간단한 정보를 알려주세요',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            '맞춤 건강 가이드를 위해 사용됩니다\n건너뛰어도 괜찮아요',
+            style: TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 14,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // Birth year
+          const Text(
+            '출생년도',
+            style: TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            decoration: AppTheme.glassCard,
+            child: TextField(
+              controller: _birthYearController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(4),
+              ],
+              style:
+                  const TextStyle(color: AppTheme.textPrimary, fontSize: 15),
+              decoration: const InputDecoration(
+                hintText: '예: 1990',
+                hintStyle: TextStyle(color: AppTheme.textTertiary),
+                prefixIcon:
+                    Icon(Icons.cake_rounded, color: AppTheme.primary, size: 20),
+                border: InputBorder.none,
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Gender
+          const Text(
+            '성별',
+            style: TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              _buildGenderChip('male', '남성', Icons.male_rounded),
+              const SizedBox(width: 8),
+              _buildGenderChip('female', '여성', Icons.female_rounded),
+              const SizedBox(width: 8),
+              _buildGenderChip('other', '기타', Icons.transgender_rounded),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Info note
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline_rounded,
+                    color: AppTheme.primary, size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '키, 체중 등 상세 정보는 설정에서 입력할 수 있어요',
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGenderChip(String value, String label, IconData icon) {
+    final isSelected = _selectedGender == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedGender = value),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppTheme.primary.withValues(alpha: 0.15)
+                : AppTheme.surfaceDarkElevated,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? AppTheme.primary : Colors.transparent,
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(icon,
+                  color:
+                      isSelected ? AppTheme.primary : AppTheme.textSecondary,
+                  size: 24),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color:
+                      isSelected ? AppTheme.primary : AppTheme.textSecondary,
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -286,7 +461,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             ),
                           ],
                           const SizedBox(height: 8),
-                          // Pattern preview
                           Wrap(
                             spacing: 4,
                             children: pattern.pattern.map((type) {

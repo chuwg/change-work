@@ -7,9 +7,12 @@ import '../../config/theme.dart';
 import '../../providers/health_sync_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/sleep_provider.dart';
+import '../../models/user_profile.dart';
 import '../../services/database_service.dart';
 import '../../services/notification_service.dart';
 import '../../utils/constants.dart';
+import 'profile_edit_screen.dart';
+import 'shift_times_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -23,11 +26,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _shiftReminder = true;
   bool _healthTips = true;
   int _reminderMinutes = 60;
+  UserProfile? _profile;
 
   @override
   void initState() {
     super.initState();
     _loadPreferences();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final profile = await DatabaseService.instance.getUserProfile();
+    if (mounted) setState(() => _profile = profile);
   }
 
   Future<void> _loadPreferences() async {
@@ -127,7 +137,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 24),
 
             // Profile section
-            Container(
+            GestureDetector(
+              onTap: () async {
+                final result = await Navigator.push<UserProfile>(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const ProfileEditScreen()),
+                );
+                if (result != null) {
+                  setState(() => _profile = result);
+                }
+              },
+              child: Container(
               padding: const EdgeInsets.all(20),
               decoration: AppTheme.glassCard,
               child: Row(
@@ -146,20 +167,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '교대근무자',
-                          style: TextStyle(
+                          _profile?.name ?? '교대근무자',
+                          style: const TextStyle(
                             color: AppTheme.textPrimary,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        SizedBox(height: 2),
-                        Text(
+                        const SizedBox(height: 2),
+                        const Text(
                           '프로필 편집',
                           style: TextStyle(
                             color: AppTheme.textSecondary,
@@ -174,6 +195,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     color: AppTheme.textTertiary,
                   ),
                 ],
+              ),
+            ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Shift times settings
+            _buildSectionHeader('근무 설정'),
+            const SizedBox(height: 8),
+            Container(
+              decoration: AppTheme.glassCard,
+              child: _buildActionTile(
+                icon: Icons.schedule_rounded,
+                title: '근무 시간 설정',
+                subtitle: '근무 타입별 시작/종료 시간',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ShiftTimesScreen()),
+                  );
+                },
               ),
             ),
 

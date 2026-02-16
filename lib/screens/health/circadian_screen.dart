@@ -15,7 +15,15 @@ class CircadianScreen extends ConsumerWidget {
     final schedule = ref.watch(scheduleProvider);
     final shiftType = schedule.todayShift?.type ?? 'day';
     final healthService = AiHealthService();
-    final recommendedTimes = healthService.getRecommendedSleepTimes(shiftType);
+
+    // Use actual shift schedule from health state, fallback to default
+    final shiftSchedule =
+        health.currentSchedule ?? ShiftSchedule.defaultForType(shiftType);
+
+    final recommendedTimes = healthService.getRecommendedSleepTimes(
+      shiftType: shiftType,
+      schedule: shiftSchedule,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -38,7 +46,7 @@ class CircadianScreen extends ConsumerWidget {
                 child: CustomPaint(
                   painter: CircadianClockPainter(
                     currentPhase: health.currentPhase,
-                    shiftType: shiftType,
+                    shiftSchedule: shiftSchedule,
                   ),
                   child: Center(
                     child: Column(
@@ -123,17 +131,38 @@ class CircadianScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '권장 시간표',
-                    style: TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Row(
+                    children: [
+                      const Text(
+                        '권장 시간표',
+                        style: TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '${shiftSchedule.startTimeStr}~${shiftSchedule.endTimeStr}',
+                          style: const TextStyle(
+                            color: AppTheme.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '현재 근무 패턴 기반 맞춤 가이드',
+                  const Text(
+                    '실제 근무 시간 기반 맞춤 가이드',
                     style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 12,
@@ -162,13 +191,27 @@ class CircadianScreen extends ConsumerWidget {
                       AppTheme.primary,
                     ),
                   ],
+                  const SizedBox(height: 12),
+                  _buildTimeRow(
+                    Icons.coffee_rounded,
+                    '카페인 컷오프',
+                    shiftSchedule.caffeineCutoffStr,
+                    AppTheme.warning,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildTimeRow(
+                    Icons.restaurant_rounded,
+                    '마지막 식사',
+                    shiftSchedule.lastMealStr,
+                    AppTheme.shiftEvening,
+                  ),
                 ],
               ),
             ),
 
             const SizedBox(height: 16),
 
-            // Phase timeline
+            // Phase timeline - dynamically generated
             Container(
               padding: const EdgeInsets.all(20),
               decoration: AppTheme.glassCard,
@@ -184,7 +227,8 @@ class CircadianScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  ..._buildPhaseTimeline(shiftType),
+                  ..._buildDynamicPhaseTimeline(healthService, shiftType,
+                      shiftSchedule),
                 ],
               ),
             ),
@@ -226,36 +270,35 @@ class CircadianScreen extends ConsumerWidget {
     );
   }
 
-  List<Widget> _buildPhaseTimeline(String shiftType) {
-    final phases = shiftType == 'night'
-        ? [
-            _PhaseInfo('08:00-10:00', '수면 준비', CircadianPhase.drowsy),
-            _PhaseInfo('10:00-18:00', '수면', CircadianPhase.sleep),
-            _PhaseInfo('18:00-20:00', '기상 & 준비', CircadianPhase.waking),
-            _PhaseInfo('20:00-02:00', '각성 (근무)', CircadianPhase.alert),
-            _PhaseInfo('02:00-05:00', '활동 (근무)', CircadianPhase.active),
-            _PhaseInfo('05:00-08:00', '졸림 (근무 마감)', CircadianPhase.drowsy),
-          ]
-        : shiftType == 'evening'
-            ? [
-                _PhaseInfo('00:00-07:00', '수면', CircadianPhase.sleep),
-                _PhaseInfo('07:00-09:00', '기상 & 활동', CircadianPhase.waking),
-                _PhaseInfo('09:00-13:00', '각성', CircadianPhase.alert),
-                _PhaseInfo('13:00-15:00', '활동', CircadianPhase.active),
-                _PhaseInfo('15:00-22:00', '각성 (근무)', CircadianPhase.alert),
-                _PhaseInfo('22:00-00:00', '수면 준비', CircadianPhase.drowsy),
-              ]
-            : [
-                _PhaseInfo('05:00-07:00', '기상 & 준비', CircadianPhase.waking),
-                _PhaseInfo('07:00-10:00', '각성', CircadianPhase.alert),
-                _PhaseInfo('10:00-14:00', '최고 활동', CircadianPhase.active),
-                _PhaseInfo('14:00-16:00', '졸림 (점심 후)', CircadianPhase.drowsy),
-                _PhaseInfo('16:00-20:00', '각성', CircadianPhase.alert),
-                _PhaseInfo('20:00-22:00', '수면 준비', CircadianPhase.drowsy),
-                _PhaseInfo('22:00-05:00', '수면', CircadianPhase.sleep),
-              ];
+  /// Build phase timeline dynamically from the service's generatePhaseTimeline.
+  List<Widget> _buildDynamicPhaseTimeline(
+      AiHealthService service, String shiftType, ShiftSchedule schedule) {
+    final hourPhases = service.generatePhaseTimeline(
+      shiftType: shiftType,
+      schedule: schedule,
+    );
 
-    return phases.map((p) {
+    // Merge consecutive hours with the same phase into ranges
+    final merged = <_PhaseInfo>[];
+    int rangeStart = 0;
+    CircadianPhase currentPhase =
+        hourPhases[0]['phase'] as CircadianPhase;
+
+    for (int i = 1; i <= 24; i++) {
+      final phase =
+          i < 24 ? hourPhases[i]['phase'] as CircadianPhase : currentPhase;
+      if (i == 24 || phase != currentPhase) {
+        merged.add(_PhaseInfo(
+          '${rangeStart.toString().padLeft(2, '0')}:00-${i == 24 ? '00' : i.toString().padLeft(2, '0')}:00',
+          _getPhaseLabel(currentPhase),
+          currentPhase,
+        ));
+        rangeStart = i;
+        currentPhase = phase;
+      }
+    }
+
+    return merged.map((p) {
       final color = _getPhaseColor(p.phase);
       return Padding(
         padding: const EdgeInsets.only(bottom: 8),
@@ -378,11 +421,11 @@ class _PhaseInfo {
 
 class CircadianClockPainter extends CustomPainter {
   final CircadianPhase currentPhase;
-  final String shiftType;
+  final ShiftSchedule shiftSchedule;
 
   CircadianClockPainter({
     required this.currentPhase,
-    required this.shiftType,
+    required this.shiftSchedule,
   });
 
   @override
@@ -396,9 +439,9 @@ class CircadianClockPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, radius, bgPaint);
 
-    // Phase segments
-    final phases = _getPhaseSegments();
-    for (final segment in phases) {
+    // Phase segments - dynamically generated from schedule
+    final segments = _buildDynamicSegments();
+    for (final segment in segments) {
       final paint = Paint()
         ..color = segment.color.withValues(alpha: 0.3)
         ..style = PaintingStyle.stroke
@@ -460,7 +503,7 @@ class CircadianClockPainter extends CustomPainter {
 
       final textPainter = TextPainter(
         text: TextSpan(
-          text: '${i.toString().padLeft(2, '0')}',
+          text: i.toString().padLeft(2, '0'),
           style: const TextStyle(
             color: AppTheme.textSecondary,
             fontSize: 10,
@@ -477,41 +520,53 @@ class CircadianClockPainter extends CustomPainter {
     }
   }
 
-  List<_ClockSegment> _getPhaseSegments() {
-    if (shiftType == 'night') {
-      return [
-        _ClockSegment(8 / 24 * 2 * math.pi, 2 / 24 * 2 * math.pi,
-            AppTheme.circadianDrowsy),
-        _ClockSegment(10 / 24 * 2 * math.pi, 8 / 24 * 2 * math.pi,
-            AppTheme.circadianSleep),
-        _ClockSegment(18 / 24 * 2 * math.pi, 2 / 24 * 2 * math.pi,
-            AppTheme.circadianWaking),
-        _ClockSegment(20 / 24 * 2 * math.pi, 6 / 24 * 2 * math.pi,
-            AppTheme.circadianAlert),
-        _ClockSegment(2 / 24 * 2 * math.pi, 3 / 24 * 2 * math.pi,
-            AppTheme.success),
-        _ClockSegment(5 / 24 * 2 * math.pi, 3 / 24 * 2 * math.pi,
-            AppTheme.circadianDrowsy),
-      ];
+  /// Build clock segments dynamically from the shift schedule.
+  List<_ClockSegment> _buildDynamicSegments() {
+    final service = AiHealthService();
+    final hourPhases = service.generatePhaseTimeline(
+      shiftType: shiftSchedule.type,
+      schedule: shiftSchedule,
+    );
+
+    // Merge consecutive hours with same phase
+    final segments = <_ClockSegment>[];
+    int rangeStart = 0;
+    CircadianPhase currentPhase =
+        hourPhases[0]['phase'] as CircadianPhase;
+
+    for (int i = 1; i <= 24; i++) {
+      final phase =
+          i < 24 ? hourPhases[i]['phase'] as CircadianPhase : currentPhase;
+      if (i == 24 || phase != currentPhase) {
+        final startAngle = rangeStart / 24 * 2 * math.pi;
+        final sweepAngle = (i - rangeStart) / 24 * 2 * math.pi;
+        segments.add(_ClockSegment(
+          startAngle,
+          sweepAngle,
+          _phaseColor(currentPhase),
+        ));
+        rangeStart = i;
+        currentPhase = phase;
+      }
     }
 
-    // Default (day shift)
-    return [
-      _ClockSegment(5 / 24 * 2 * math.pi, 2 / 24 * 2 * math.pi,
-          AppTheme.circadianWaking),
-      _ClockSegment(7 / 24 * 2 * math.pi, 3 / 24 * 2 * math.pi,
-          AppTheme.circadianAlert),
-      _ClockSegment(10 / 24 * 2 * math.pi, 4 / 24 * 2 * math.pi,
-          AppTheme.success),
-      _ClockSegment(14 / 24 * 2 * math.pi, 2 / 24 * 2 * math.pi,
-          AppTheme.circadianDrowsy),
-      _ClockSegment(16 / 24 * 2 * math.pi, 4 / 24 * 2 * math.pi,
-          AppTheme.circadianAlert),
-      _ClockSegment(20 / 24 * 2 * math.pi, 2 / 24 * 2 * math.pi,
-          AppTheme.circadianDrowsy),
-      _ClockSegment(22 / 24 * 2 * math.pi, 7 / 24 * 2 * math.pi,
-          AppTheme.circadianSleep),
-    ];
+    return segments;
+  }
+
+  Color _phaseColor(CircadianPhase phase) {
+    switch (phase) {
+      case CircadianPhase.alert:
+        return AppTheme.circadianAlert;
+      case CircadianPhase.active:
+        return AppTheme.success;
+      case CircadianPhase.drowsy:
+        return AppTheme.circadianDrowsy;
+      case CircadianPhase.sleep:
+      case CircadianPhase.deepSleep:
+        return AppTheme.circadianSleep;
+      case CircadianPhase.waking:
+        return AppTheme.circadianWaking;
+    }
   }
 
   @override

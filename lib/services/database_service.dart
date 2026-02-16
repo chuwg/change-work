@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import '../models/shift.dart';
 import '../models/shift_pattern.dart';
 import '../models/sleep_record.dart';
+import '../models/user_profile.dart';
 import '../utils/constants.dart';
 
 class DatabaseService {
@@ -73,6 +74,17 @@ class DatabaseService {
       )
     ''');
 
+    await db.execute('''
+      CREATE TABLE user_profile (
+        id INTEGER PRIMARY KEY DEFAULT 1,
+        name TEXT,
+        birth_year INTEGER,
+        gender TEXT,
+        height_cm REAL,
+        weight_kg REAL
+      )
+    ''');
+
     await db.execute(
       'CREATE INDEX idx_shifts_date ON shifts(date)',
     );
@@ -84,6 +96,18 @@ class DatabaseService {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE sleep_records ADD COLUMN source TEXT');
+    }
+    if (oldVersion < 3) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS user_profile (
+          id INTEGER PRIMARY KEY DEFAULT 1,
+          name TEXT,
+          birth_year INTEGER,
+          gender TEXT,
+          height_cm REAL,
+          weight_kg REAL
+        )
+      ''');
     }
   }
 
@@ -238,6 +262,23 @@ class DatabaseService {
       map[type] = avg;
     }
     return map;
+  }
+
+  // === User Profile ===
+
+  Future<UserProfile?> getUserProfile() async {
+    final db = await database;
+    final maps = await db.query('user_profile', where: 'id = 1', limit: 1);
+    if (maps.isEmpty) return null;
+    return UserProfile.fromMap(maps.first);
+  }
+
+  Future<void> saveUserProfile(UserProfile profile) async {
+    final db = await database;
+    final data = profile.toMap();
+    data['id'] = 1;
+    await db.insert('user_profile', data,
+        conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   // === Data Management ===

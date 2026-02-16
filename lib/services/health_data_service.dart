@@ -24,7 +24,13 @@ class HealthDataService {
     HealthDataType.HEART_RATE,
   ];
 
-  List<HealthDataType> get _allTypes => [..._sleepTypes, ..._activityTypes];
+  static const _bodyTypes = [
+    HealthDataType.WEIGHT,
+    HealthDataType.HEIGHT,
+  ];
+
+  List<HealthDataType> get _allTypes =>
+      [..._sleepTypes, ..._activityTypes, ..._bodyTypes];
 
   /// Request authorization to read health data.
   Future<bool> requestAuthorization() async {
@@ -111,6 +117,54 @@ class HealthDataService {
       return value.numericValue.toDouble();
     }
     return null;
+  }
+
+  /// Get the latest weight value (kg).
+  Future<double?> fetchLatestWeight() async {
+    if (!_isAuthorized) return null;
+    try {
+      final now = DateTime.now();
+      final start = now.subtract(const Duration(days: 90));
+      final data = await _health.getHealthDataFromTypes(
+        types: [HealthDataType.WEIGHT],
+        startTime: start,
+        endTime: now,
+      );
+      if (data.isEmpty) return null;
+      data.sort((a, b) => b.dateFrom.compareTo(a.dateFrom));
+      final value = data.first.value;
+      if (value is NumericHealthValue) {
+        return value.numericValue.toDouble();
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Get the latest height value (cm).
+  Future<double?> fetchLatestHeight() async {
+    if (!_isAuthorized) return null;
+    try {
+      final now = DateTime.now();
+      final start = now.subtract(const Duration(days: 365));
+      final data = await _health.getHealthDataFromTypes(
+        types: [HealthDataType.HEIGHT],
+        startTime: start,
+        endTime: now,
+      );
+      if (data.isEmpty) return null;
+      data.sort((a, b) => b.dateFrom.compareTo(a.dateFrom));
+      final value = data.first.value;
+      if (value is NumericHealthValue) {
+        // HealthKit returns height in meters, convert to cm
+        final meters = value.numericValue.toDouble();
+        return meters > 3 ? meters : meters * 100;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Sync sleep data from HealthKit/Health Connect to local DB.

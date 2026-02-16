@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/user_profile.dart';
 import '../services/health_data_service.dart';
+import '../services/database_service.dart';
 import '../providers/sleep_provider.dart';
 import '../utils/constants.dart';
 
@@ -120,6 +122,9 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
       // Fetch latest heart rate
       final heartRate = await _healthService.fetchLatestHeartRate();
 
+      // Sync weight/height to user profile if available
+      await _syncBodyMeasurements();
+
       // Save last sync time
       final syncTime = DateTime.now();
       final prefs = await SharedPreferences.getInstance();
@@ -139,6 +144,36 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
       ref.read(sleepProvider.notifier).loadRecords();
     } catch (_) {
       state = state.copyWith(isSyncing: false);
+    }
+  }
+
+  /// Sync weight/height from HealthKit to user profile.
+  Future<void> _syncBodyMeasurements() async {
+    try {
+      final weight = await _healthService.fetchLatestWeight();
+      final height = await _healthService.fetchLatestHeight();
+
+      if (weight == null && height == null) return;
+
+      final db = DatabaseService.instance;
+      final profile = await db.getUserProfile();
+
+      if (profile != null) {
+        final updated = profile.copyWith(
+          weightKg: weight ?? profile.weightKg,
+          heightCm: height ?? profile.heightCm,
+        );
+        await db.saveUserProfile(updated);
+      } else {
+        // Create a minimal profile with body measurements
+        final newProfile = UserProfile(
+          weightKg: weight,
+          heightCm: height,
+        );
+        await db.saveUserProfile(newProfile);
+      }
+    } catch (_) {
+      // Silently fail - body measurements are optional
     }
   }
 

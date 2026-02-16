@@ -4,7 +4,7 @@ class AppConstants {
   static const String appName = 'Change';
   static const String appVersion = '1.0.0';
   static const String dbName = 'change.db';
-  static const int dbVersion = 2;
+  static const int dbVersion = 3;
 
   // Shift Types
   static const String shiftDay = 'day';
@@ -35,6 +35,9 @@ class AppConstants {
   // Health data sync keys
   static const String healthSyncEnabledKey = 'health_sync_enabled';
   static const String lastHealthSyncKey = 'last_health_sync';
+
+  // Custom shift times key
+  static const String customShiftTimesKey = 'custom_shift_times';
 
   // Settings keys
   static const String sleepReminderKey = 'sleep_reminder';
