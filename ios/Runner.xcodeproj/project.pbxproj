@@ -471,7 +471,6 @@
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				B46D77B6709FFFA2566D6752 /* Embed App Extensions */,
-				2A06A63814B4F7E35A08B073 /* Embed Watch Content */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				A5D1A1D46B0F2461473A468D /* [CP] Embed Pods Frameworks */,
 			);
@@ -479,7 +478,6 @@
 			);
 			dependencies = (
 				DFB329D5D551416C73488204 /* PBXTargetDependency */,
-				61107CE7867F21AD10C24A18 /* PBXTargetDependency */,
 			);
 			name = Runner;
 			productName = Runner;
@@ -974,7 +972,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChangeWatchComplication/Info.plist;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.change.app.change.watchkitapp.complication;
+				PRODUCT_BUNDLE_IDENTIFIER = com.change.app.change.shiftcomplication;
 				PRODUCT_NAME = ChangeWatchComplication;
 				SDKROOT = watchos;
 				SWIFT_VERSION = 5.0;
@@ -993,7 +991,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChangeWatchComplication/Info.plist;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.change.app.change.watchkitapp.complication;
+				PRODUCT_BUNDLE_IDENTIFIER = com.change.app.change.shiftcomplication;
 				PRODUCT_NAME = ChangeWatchComplication;
 				SDKROOT = watchos;
 				SWIFT_VERSION = 5.0;
@@ -1055,7 +1053,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChangeWatchComplication/Info.plist;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.change.app.change.watchkitapp.complication;
+				PRODUCT_BUNDLE_IDENTIFIER = com.change.app.change.shiftcomplication;
 				PRODUCT_NAME = ChangeWatchComplication;
 				SDKROOT = watchos;
 				SWIFT_VERSION = 5.0;
