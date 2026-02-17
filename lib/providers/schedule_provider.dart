@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../models/shift.dart';
 import '../models/shift_pattern.dart';
 import '../services/database_service.dart';
+import '../services/widget_service.dart';
 import '../utils/constants.dart';
 
 const _uuid = Uuid();
@@ -102,6 +103,7 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
       shiftMap[key] = shift;
     }
     state = state.copyWith(shifts: shiftMap, isLoading: false);
+    WidgetService.instance.updateWidgetData(state);
   }
 
   Future<void> addShift(DateTime date, String type, {String? note}) async {
@@ -120,6 +122,7 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
     final shiftMap = Map<DateTime, Shift>.from(state.shifts);
     shiftMap[dateKey] = shift;
     state = state.copyWith(shifts: shiftMap);
+    WidgetService.instance.updateWidgetData(state);
   }
 
   Future<void> applyPattern(
@@ -174,6 +177,7 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
     }
 
     state = state.copyWith(shifts: shiftMap, isLoading: false);
+    WidgetService.instance.updateWidgetData(state);
 
     await _db.setSetting('active_pattern_id', pattern.id);
     await _db.setSetting('pattern_start_date', startDate.toIso8601String());
@@ -187,6 +191,7 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
       final shiftMap = Map<DateTime, Shift>.from(state.shifts);
       shiftMap.remove(dateKey);
       state = state.copyWith(shifts: shiftMap);
+      WidgetService.instance.updateWidgetData(state);
     }
   }
 }

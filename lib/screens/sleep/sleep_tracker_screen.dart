@@ -35,9 +35,8 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
     final sleep = ref.watch(sleepProvider);
 
     return Scaffold(
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
+      body: CustomScrollView(
+        slivers: [
             // Header
             SliverToBoxAdapter(
               child: Padding(
@@ -378,8 +377,7 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
             const SliverToBoxAdapter(
               child: SizedBox(height: 100),
             ),
-          ],
-        ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddSleepRecord(context),

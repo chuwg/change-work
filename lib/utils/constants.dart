@@ -4,7 +4,7 @@ class AppConstants {
   static const String appName = 'Change';
   static const String appVersion = '1.0.0';
   static const String dbName = 'change.db';
-  static const int dbVersion = 3;
+  static const int dbVersion = 4;
 
   // Shift Types
   static const String shiftDay = 'day';
@@ -51,4 +51,45 @@ class AppConstants {
   static const String tipExercise = 'exercise';
   static const String tipCaffeine = 'caffeine';
   static const String tipLight = 'light';
+  static const String tipEnergy = 'energy';
+
+  // Energy levels
+  static const int energyExcellent = 5;
+  static const int energyGood = 4;
+  static const int energyNormal = 3;
+  static const int energyTired = 2;
+  static const int energyExhausted = 1;
+
+  // Energy activity types
+  static const List<String> energyActivities = [
+    'work',
+    'commute',
+    'exercise',
+    'meal',
+    'rest',
+    'wakeup',
+    'other',
+  ];
+
+  // Energy mood types
+  static const List<String> energyMoods = [
+    'great',
+    'normal',
+    'tired',
+    'stressed',
+    'anxious',
+  ];
+
+  // Salary settings
+  static const String salarySettingsKey = 'salary_settings';
+
+  // Widget
+  static const String appGroupId = 'group.com.change.app.change';
+  static const String payTypeHourly = 'hourly';
+  static const String payTypeMonthly = 'monthly';
+  static const double defaultNightMultiplier = 1.5;
+  static const double defaultWeekendMultiplier = 1.5;
+  static const double defaultOvertimeMultiplier = 1.5;
+  static const double defaultShiftHours = 8.0;
+  static const double overtimeThresholdHoursPerWeek = 40.0;
 }

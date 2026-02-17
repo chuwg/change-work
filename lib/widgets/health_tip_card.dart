@@ -113,6 +113,8 @@ class HealthTipCard extends StatelessWidget {
         return const Color(0xFF8D6E63);
       case AppConstants.tipLight:
         return const Color(0xFF4FC3F7);
+      case AppConstants.tipEnergy:
+        return AppTheme.primary;
       default:
         return AppTheme.primary;
     }
@@ -130,6 +132,8 @@ class HealthTipCard extends StatelessWidget {
         return Icons.coffee_rounded;
       case AppConstants.tipLight:
         return Icons.light_mode_rounded;
+      case AppConstants.tipEnergy:
+        return Icons.bolt_rounded;
       default:
         return Icons.tips_and_updates_rounded;
     }
@@ -147,6 +151,8 @@ class HealthTipCard extends StatelessWidget {
         return '카페인';
       case AppConstants.tipLight:
         return '빛';
+      case AppConstants.tipEnergy:
+        return '에너지';
       default:
         return '팁';
     }

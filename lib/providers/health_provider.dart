@@ -4,6 +4,7 @@ import '../services/ai_health_service.dart';
 import '../services/database_service.dart';
 import 'schedule_provider.dart';
 import 'sleep_provider.dart';
+import 'energy_provider.dart';
 
 class HealthState {
   final List<HealthTip> currentTips;
@@ -86,11 +87,15 @@ class HealthNotifier extends StateNotifier<HealthState> {
     final profile = await DatabaseService.instance.getUserProfile();
     final userAge = profile?.age;
 
+    // Read energy state for tip generation
+    final energyState = _ref.read(energyProvider);
+
     // Generate tips with actual shift schedule
     final tips = _healthService.generateTips(
       currentShiftType: shiftType,
       averageSleepHours: sleepState.averageSleepHours,
       averageSleepQuality: sleepState.averageQuality,
+      averageEnergy: energyState.averageEnergy,
       schedule: schedule,
       userAge: userAge,
     );

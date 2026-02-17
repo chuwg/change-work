@@ -92,6 +92,7 @@ class AiHealthService {
     required String currentShiftType,
     required double averageSleepHours,
     required double averageSleepQuality,
+    double averageEnergy = 0,
     ShiftSchedule? schedule,
     int? userAge,
   }) {
@@ -105,8 +106,82 @@ class AiHealthService {
     tips.addAll(_getExerciseTips(sched, hour));
     tips.addAll(_getCaffeineTips(sched, hour));
     tips.addAll(_getLightTips(sched, hour));
+    tips.addAll(_getEnergyTips(sched, averageEnergy, averageSleepHours));
 
     tips.sort((a, b) => a.priority.compareTo(b.priority));
+    return tips;
+  }
+
+  List<HealthTip> _getEnergyTips(
+      ShiftSchedule sched, double avgEnergy, double avgSleepHours) {
+    final tips = <HealthTip>[];
+    final type = sched.type;
+
+    if (avgEnergy > 0 && avgEnergy < 2.5) {
+      tips.add(HealthTip(
+        id: 'energy_low_warning',
+        category: AppConstants.tipEnergy,
+        title: '에너지 수준 경고',
+        description:
+            '최근 평균 에너지가 ${avgEnergy.toStringAsFixed(1)}로 낮습니다. '
+            '충분한 수면과 규칙적인 식사를 확인해보세요.',
+        shiftType: type,
+        priority: 1,
+      ));
+    }
+
+    if (type == AppConstants.shiftNight) {
+      tips.add(HealthTip(
+        id: 'energy_night_1',
+        category: AppConstants.tipEnergy,
+        title: '야간 근무 에너지 관리',
+        description:
+            '근무 시작 시 밝은 빛에 노출하고, '
+            '02:00-04:00 사이 가벼운 스트레칭으로 각성도를 유지하세요. '
+            '짧은 산책이나 냉수 세안도 효과적입니다.',
+        shiftType: type,
+        timing: '02:00-04:00',
+        priority: 2,
+      ));
+    } else if (type == AppConstants.shiftDay) {
+      tips.add(HealthTip(
+        id: 'energy_day_1',
+        category: AppConstants.tipEnergy,
+        title: '오후 슬럼프 극복',
+        description:
+            '13:00-15:00 사이 에너지가 떨어질 수 있습니다. '
+            '가벼운 산책이나 스트레칭으로 각성도를 유지하세요. '
+            '고당분 간식 대신 견과류나 과일을 섭취하세요.',
+        shiftType: type,
+        timing: '13:00-15:00',
+        priority: 3,
+      ));
+    } else if (type == AppConstants.shiftEvening) {
+      tips.add(HealthTip(
+        id: 'energy_evening_1',
+        category: AppConstants.tipEnergy,
+        title: '저녁 근무 에너지 관리',
+        description:
+            '출근 전 가벼운 운동으로 에너지를 끌어올리세요. '
+            '근무 중 규칙적으로 수분을 섭취하면 집중력 유지에 도움됩니다.',
+        shiftType: type,
+        priority: 3,
+      ));
+    }
+
+    if (avgEnergy > 0 && avgEnergy < 3 && avgSleepHours > 0 && avgSleepHours < 6) {
+      tips.add(HealthTip(
+        id: 'energy_sleep_correlation',
+        category: AppConstants.tipEnergy,
+        title: '수면 부족이 에너지에 영향',
+        description:
+            '수면 시간(${avgSleepHours.toStringAsFixed(1)}시간)이 부족합니다. '
+            '수면 시간을 1시간만 늘려도 에너지 수준이 크게 개선됩니다.',
+        shiftType: type,
+        priority: 1,
+      ));
+    }
+
     return tips;
   }
 

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <!-- Top: Today info -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tv_today_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="오늘 주간"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_today_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="06:00 - 14:00"
+            android:textColor="#999999"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- D-day -->
+    <TextView
+        android:id="@+id/tv_dday"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="다음 휴무 D-2"
+        android:textColor="#5DB882"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Week strip: 7 fixed cells -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <!-- Day 0 (Today) -->
+        <LinearLayout
+            android:id="@+id/cell_day0"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/widget_today_highlight"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="3dp">
+
+            <TextView android:id="@+id/tv_weekday0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="10sp" />
+            <TextView android:id="@+id/tv_date0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:id="@+id/tv_type0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Day 1 -->
+        <LinearLayout android:id="@+id/cell_day1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical" android:padding="3dp">
+            <TextView android:id="@+id/tv_weekday1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#808080" android:textSize="10sp" />
+            <TextView android:id="@+id/tv_date1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#B3B3B3" android:textSize="11sp" />
+            <TextView android:id="@+id/tv_type1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Day 2 -->
+        <LinearLayout android:id="@+id/cell_day2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical" android:padding="3dp">
+            <TextView android:id="@+id/tv_weekday2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#808080" android:textSize="10sp" />
+            <TextView android:id="@+id/tv_date2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#B3B3B3" android:textSize="11sp" />
+            <TextView android:id="@+id/tv_type2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Day 3 -->
+        <LinearLayout android:id="@+id/cell_day3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical" android:padding="3dp">
+            <TextView android:id="@+id/tv_weekday3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#808080" android:textSize="10sp" />
+            <TextView android:id="@+id/tv_date3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#B3B3B3" android:textSize="11sp" />
+            <TextView android:id="@+id/tv_type3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Day 4 -->
+        <LinearLayout android:id="@+id/cell_day4" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical" android:padding="3dp">
+            <TextView android:id="@+id/tv_weekday4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#808080" android:textSize="10sp" />
+            <TextView android:id="@+id/tv_date4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#B3B3B3" android:textSize="11sp" />
+            <TextView android:id="@+id/tv_type4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Day 5 -->
+        <LinearLayout android:id="@+id/cell_day5" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical" android:padding="3dp">
+            <TextView android:id="@+id/tv_weekday5" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#808080" android:textSize="10sp" />
+            <TextView android:id="@+id/tv_date5" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#B3B3B3" android:textSize="11sp" />
+            <TextView android:id="@+id/tv_type5" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Day 6 -->
+        <LinearLayout android:id="@+id/cell_day6" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center_horizontal" android:orientation="vertical" android:padding="3dp">
+            <TextView android:id="@+id/tv_weekday6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#808080" android:textSize="10sp" />
+            <TextView android:id="@+id/tv_date6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#B3B3B3" android:textSize="11sp" />
+            <TextView android:id="@+id/tv_type6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textStyle="bold" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

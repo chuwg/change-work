@@ -50,6 +50,30 @@
             </intent-filter>
         </activity-alias>
 
+        <!-- Shift Widget Small -->
+        <receiver
+            android:name=".ShiftWidgetSmall"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/shift_widget_small_info" />
+        </receiver>
+
+        <!-- Shift Widget Medium -->
+        <receiver
+            android:name=".ShiftWidgetMedium"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/shift_widget_medium_info" />
+        </receiver>
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

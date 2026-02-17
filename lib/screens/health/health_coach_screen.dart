@@ -152,6 +152,7 @@ class _HealthCoachScreenState extends ConsumerState<HealthCoachScreen> {
                     _buildCategoryChip(AppConstants.tipExercise, '운동'),
                     _buildCategoryChip(AppConstants.tipCaffeine, '카페인'),
                     _buildCategoryChip(AppConstants.tipLight, '빛 관리'),
+                    _buildCategoryChip(AppConstants.tipEnergy, '에너지'),
                   ],
                 ),
               ),

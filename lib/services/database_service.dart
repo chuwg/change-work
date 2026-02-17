@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import '../models/shift.dart';
 import '../models/shift_pattern.dart';
 import '../models/sleep_record.dart';
+import '../models/energy_record.dart';
 import '../models/user_profile.dart';
 import '../utils/constants.dart';
 
@@ -85,11 +86,32 @@ class DatabaseService {
       )
     ''');
 
+    await db.execute('''
+      CREATE TABLE energy_records (
+        id TEXT PRIMARY KEY,
+        date TEXT NOT NULL,
+        timestamp TEXT NOT NULL,
+        energy_level INTEGER NOT NULL,
+        shift_type TEXT,
+        activity TEXT,
+        mood TEXT,
+        note TEXT,
+        source TEXT DEFAULT 'manual',
+        created_at TEXT NOT NULL
+      )
+    ''');
+
     await db.execute(
       'CREATE INDEX idx_shifts_date ON shifts(date)',
     );
     await db.execute(
       'CREATE INDEX idx_sleep_date ON sleep_records(date)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_energy_date ON energy_records(date)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_energy_timestamp ON energy_records(timestamp)',
     );
   }
 
@@ -108,6 +130,28 @@ class DatabaseService {
           weight_kg REAL
         )
       ''');
+    }
+    if (oldVersion < 4) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS energy_records (
+          id TEXT PRIMARY KEY,
+          date TEXT NOT NULL,
+          timestamp TEXT NOT NULL,
+          energy_level INTEGER NOT NULL,
+          shift_type TEXT,
+          activity TEXT,
+          mood TEXT,
+          note TEXT,
+          source TEXT DEFAULT 'manual',
+          created_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_energy_date ON energy_records(date)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_energy_timestamp ON energy_records(timestamp)',
+      );
     }
   }
 
@@ -264,6 +308,77 @@ class DatabaseService {
     return map;
   }
 
+  // === Energy Records ===
+
+  Future<void> insertEnergyRecord(EnergyRecord record) async {
+    final db = await database;
+    await db.insert('energy_records', record.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<List<EnergyRecord>> getEnergyRecords({
+    DateTime? startDate,
+    DateTime? endDate,
+    int? limit,
+  }) async {
+    final db = await database;
+    String? where;
+    List<dynamic>? whereArgs;
+
+    if (startDate != null && endDate != null) {
+      where = 'date BETWEEN ? AND ?';
+      whereArgs = [startDate.toIso8601String(), endDate.toIso8601String()];
+    }
+
+    final maps = await db.query(
+      'energy_records',
+      where: where,
+      whereArgs: whereArgs,
+      orderBy: 'timestamp DESC',
+      limit: limit,
+    );
+
+    return maps.map((m) => EnergyRecord.fromMap(m)).toList();
+  }
+
+  Future<List<EnergyRecord>> getEnergyRecordsForDate(DateTime date) async {
+    final db = await database;
+    final dateStr =
+        DateTime(date.year, date.month, date.day).toIso8601String();
+
+    final maps = await db.query(
+      'energy_records',
+      where: 'date = ?',
+      whereArgs: [dateStr],
+      orderBy: 'timestamp ASC',
+    );
+
+    return maps.map((m) => EnergyRecord.fromMap(m)).toList();
+  }
+
+  Future<void> deleteEnergyRecord(String id) async {
+    final db = await database;
+    await db.delete('energy_records', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<Map<String, double>> getAverageEnergyByShiftType() async {
+    final db = await database;
+    final result = await db.rawQuery('''
+      SELECT shift_type, AVG(energy_level) as avg_energy
+      FROM energy_records
+      WHERE shift_type IS NOT NULL
+      GROUP BY shift_type
+    ''');
+
+    final map = <String, double>{};
+    for (final row in result) {
+      final type = row['shift_type'] as String;
+      final avg = (row['avg_energy'] as num).toDouble();
+      map[type] = avg;
+    }
+    return map;
+  }
+
   // === User Profile ===
 
   Future<UserProfile?> getUserProfile() async {
@@ -287,6 +402,7 @@ class DatabaseService {
     final db = await database;
     await db.delete('shifts');
     await db.delete('sleep_records');
+    await db.delete('energy_records');
     await db.delete('user_settings');
   }
 

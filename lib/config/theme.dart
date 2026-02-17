@@ -199,6 +199,23 @@ class AppTheme {
     end: Alignment.bottomRight,
   );
 
+  // Energy card gradient — warm amber/gold
+  static const LinearGradient energyCardGradient = LinearGradient(
+    colors: [Color(0xFF3D2A1A), Color(0xFF4A3520)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // Salary card gradient — deep forest green
+  static const LinearGradient salaryCardGradient = LinearGradient(
+    colors: [Color(0xFF1A3D2A), Color(0xFF243D2D)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // Salary colors
+  static const Color salaryGreen = Color(0xFF5DB882);
+
   static BoxDecoration get glassCard => BoxDecoration(
         color: surfaceDarkElevated.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(16),

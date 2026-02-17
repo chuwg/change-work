@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Change</string>
+    <string name="widget_small_description">오늘의 근무 일정을 확인하세요</string>
+    <string name="widget_medium_description">오늘의 근무와 이번 주 스케줄을 확인하세요</string>
+</resources>

@@ -6,9 +6,12 @@ import 'config/routes.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/calendar/calendar_screen.dart';
 import 'screens/health/health_coach_screen.dart';
-import 'screens/sleep/sleep_tracker_screen.dart';
+import 'screens/condition/condition_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
+import 'services/widget_service.dart';
+import 'providers/schedule_provider.dart';
+import 'providers/energy_provider.dart';
 
 class ChangeApp extends ConsumerWidget {
   const ChangeApp({super.key});
@@ -97,16 +100,60 @@ class MainShell extends ConsumerStatefulWidget {
   ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends ConsumerState<MainShell> {
+class _MainShellState extends ConsumerState<MainShell>
+    with WidgetsBindingObserver {
   int _currentIndex = 0;
 
   final List<Widget> _screens = const [
     HomeScreen(),
     CalendarScreen(),
-    SleepTrackerScreen(),
+    ConditionScreen(),
     HealthCoachScreen(),
     SettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final schedule = ref.read(scheduleProvider);
+      WidgetService.instance.updateWidgetData(schedule);
+      _importWatchEnergyRecords();
+    }
+  }
+
+  Future<void> _importWatchEnergyRecords() async {
+    final pending = await WidgetService.instance.readWatchEnergyRecords();
+    if (pending.isEmpty) return;
+
+    final energyNotifier = ref.read(energyProvider.notifier);
+    final schedule = ref.read(scheduleProvider);
+
+    for (final record in pending) {
+      final level = record['energy_level'] as int;
+      final timestamp = DateTime.parse(record['timestamp'] as String);
+      final shiftType = schedule.getShiftTypeForDate(timestamp);
+
+      await energyNotifier.addEnergyRecord(
+        energyLevel: level,
+        shiftType: shiftType.isEmpty ? null : shiftType,
+        source: 'watch',
+      );
+    }
+
+    await WidgetService.instance.clearWatchEnergyRecords();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -132,7 +179,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               children: [
                 _buildNavItem(0, Icons.home_rounded, '홈'),
                 _buildNavItem(1, Icons.calendar_month_rounded, '캘린더'),
-                _buildNavItem(2, Icons.bedtime_rounded, '수면'),
+                _buildNavItem(2, Icons.monitor_heart_rounded, '컨디션'),
                 _buildNavItem(3, Icons.favorite_rounded, '건강'),
                 _buildNavItem(4, Icons.settings_rounded, '설정'),
               ],

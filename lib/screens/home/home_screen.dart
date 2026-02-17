@@ -4,10 +4,14 @@ import '../../config/theme.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/sleep_provider.dart';
 import '../../providers/health_provider.dart';
+import '../../providers/energy_provider.dart';
+import '../../providers/salary_provider.dart';
 import '../../utils/helpers.dart';
 import '../../widgets/shift_card.dart';
 import '../../widgets/health_tip_card.dart';
 import '../../widgets/sleep_summary_card.dart';
+import '../../widgets/energy_summary_card.dart';
+import '../../widgets/salary_summary_card.dart';
 import '../../widgets/circadian_mini_clock.dart';
 import '../../providers/health_sync_provider.dart';
 
@@ -32,7 +36,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           .read(scheduleProvider.notifier)
           .loadShiftsForMonth(now.year, now.month);
       await ref.read(sleepProvider.notifier).loadRecords();
+      await ref.read(energyProvider.notifier).loadRecords();
       await ref.read(healthProvider.notifier).refreshHealthData();
+      await ref.read(salaryProvider.notifier).loadSettings();
+      await ref
+          .read(salaryProvider.notifier)
+          .calculateForMonth(now.year, now.month);
     } catch (_) {
       // DB not available on web — load health tips only
       await ref.read(healthProvider.notifier).refreshHealthData();
@@ -44,6 +53,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final schedule = ref.watch(scheduleProvider);
     final sleep = ref.watch(sleepProvider);
     final health = ref.watch(healthProvider);
+    final energy = ref.watch(energyProvider);
     final healthSync = ref.watch(healthSyncProvider);
     final todayShift = schedule.todayShift;
 
@@ -116,6 +126,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ],
                   ),
+                ),
+              ),
+
+              // Energy Summary Card
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                  child: EnergySummaryCard(
+                    averageEnergy: energy.todayAverageEnergy,
+                    latestLevel: energy.latestToday?.energyLevel,
+                    latestTime: energy.latestToday?.timestamp,
+                  ),
+                ),
+              ),
+
+              // Salary Summary Card
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                  child: SalarySummaryCard(),
                 ),
               ),
 

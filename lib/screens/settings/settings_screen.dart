@@ -11,6 +11,7 @@ import '../../models/user_profile.dart';
 import '../../services/database_service.dart';
 import '../../services/notification_service.dart';
 import '../../utils/constants.dart';
+import '../../config/routes.dart';
 import 'profile_edit_screen.dart';
 import 'shift_times_screen.dart';
 
@@ -217,6 +218,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         builder: (_) => const ShiftTimesScreen()),
                   );
                 },
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Salary settings
+            _buildSectionHeader('급여 설정'),
+            const SizedBox(height: 8),
+            Container(
+              decoration: AppTheme.glassCard,
+              child: Column(
+                children: [
+                  _buildActionTile(
+                    icon: Icons.account_balance_wallet_rounded,
+                    title: '급여 설정',
+                    subtitle: '시급/월급 및 수당 설정',
+                    onTap: () => Navigator.pushNamed(
+                        context, AppRoutes.salarySettings),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _buildActionTile(
+                    icon: Icons.bar_chart_rounded,
+                    title: '급여 내역',
+                    subtitle: '월별 예상 급여 및 수당 내역',
+                    onTap: () => Navigator.pushNamed(
+                        context, AppRoutes.salary),
+                  ),
+                ],
               ),
             ),
 

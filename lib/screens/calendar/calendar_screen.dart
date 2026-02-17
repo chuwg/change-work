@@ -7,6 +7,7 @@ import '../../models/shift_pattern.dart';
 import '../../providers/schedule_provider.dart';
 import '../../utils/helpers.dart';
 import '../../utils/constants.dart';
+import '../../services/export_service.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -59,6 +60,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   ),
                   Row(
                     children: [
+                      IconButton(
+                        onPressed: () => _exportMonth(schedule),
+                        icon: const Icon(
+                          Icons.share_rounded,
+                          color: AppTheme.primary,
+                          size: 22,
+                        ),
+                        tooltip: '스케줄 공유',
+                      ),
                       IconButton(
                         onPressed: _showPatternSelector,
                         icon: const Icon(
@@ -328,6 +338,29 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _exportMonth(ScheduleState schedule) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('이미지 생성 중...'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+
+    try {
+      await ExportService.instance.exportAndShareMonth(
+        year: _focusedDay.year,
+        month: _focusedDay.month,
+        shifts: schedule.shifts,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('내보내기 실패: $e')),
+        );
+      }
+    }
   }
 
   void _showPatternSelector() {

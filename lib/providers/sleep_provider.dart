@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/sleep_record.dart';
 import '../services/database_service.dart';
+import '../services/widget_service.dart';
 
 const _uuid = Uuid();
 
@@ -79,6 +80,10 @@ class SleepNotifier extends StateNotifier<SleepState> {
       todayRecord: todayRecord,
       avgByShiftType: avgByShift,
       isLoading: false,
+    );
+    WidgetService.instance.updateSleepData(
+      sleepHours: todayRecord?.durationHours ?? 0,
+      sleepQuality: todayRecord?.quality ?? 0,
     );
   }
 

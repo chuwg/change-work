@@ -7,6 +7,7 @@ import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:sqflite/sqflite.dart';
 import 'app.dart';
 import 'services/notification_service.dart';
+import 'services/widget_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +20,7 @@ void main() async {
 
   await NotificationService.instance.initialize();
   await NotificationService.instance.requestPermissions();
+  await WidgetService.instance.initialize();
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
