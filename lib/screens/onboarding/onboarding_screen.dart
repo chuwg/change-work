@@ -189,17 +189,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ),
           const SizedBox(height: 40),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 20,
+            runSpacing: 16,
             children: [
               _buildFeatureIcon(Icons.calendar_month_rounded, '스케줄 관리'),
-              const SizedBox(width: 20),
               _buildFeatureIcon(Icons.bedtime_rounded, '수면 트래킹'),
-              const SizedBox(width: 20),
               _buildFeatureIcon(Icons.bolt_rounded, '에너지 추적'),
-              const SizedBox(width: 20),
               _buildFeatureIcon(Icons.favorite_rounded, '건강 코치'),
-              const SizedBox(width: 20),
               _buildFeatureIcon(Icons.account_balance_wallet_rounded, '급여 계산'),
             ],
           ),
@@ -209,9 +207,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Widget _buildProfilePage() {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
@@ -248,6 +249,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             child: TextField(
               controller: _birthYearController,
               keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.done,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(4),
@@ -313,6 +315,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

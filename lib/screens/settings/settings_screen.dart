@@ -435,19 +435,40 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _buildActionTile(
                     icon: Icons.star_outline_rounded,
                     title: '앱 평가하기',
-                    onTap: () {},
+                    onTap: () async {
+                      final uri = Uri.parse(
+                          'https://apps.apple.com/app/id6759284358?action=write-review');
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri,
+                            mode: LaunchMode.externalApplication);
+                      }
+                    },
                   ),
                   const Divider(height: 1, indent: 56),
                   _buildActionTile(
                     icon: Icons.mail_outline_rounded,
                     title: '의견 보내기',
-                    onTap: () {},
+                    onTap: () async {
+                      final uri = Uri.parse(
+                          'https://github.com/chuwg/change-work/issues');
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri,
+                            mode: LaunchMode.externalApplication);
+                      }
+                    },
                   ),
                   const Divider(height: 1, indent: 56),
                   _buildActionTile(
                     icon: Icons.description_outlined,
                     title: '개인정보처리방침',
-                    onTap: () {},
+                    onTap: () async {
+                      final uri = Uri.parse(
+                          'https://chuwg.github.io/change-work/privacy.html');
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri,
+                            mode: LaunchMode.externalApplication);
+                      }
+                    },
                   ),
                 ],
               ),
