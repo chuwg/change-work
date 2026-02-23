@@ -2,14 +2,121 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/shift.dart';
 import '../widgets/export_calendar_widget.dart';
+import 'database_service.dart';
 
 class ExportService {
   static final ExportService instance = ExportService._internal();
   ExportService._internal();
+
+  /// Export all data (shifts, sleep, energy) as CSV files and share.
+  Future<void> exportAllDataAsCsv() async {
+    final db = DatabaseService.instance;
+    final dir = await getTemporaryDirectory();
+    final dateStr = DateFormat('yyyyMMdd').format(DateTime.now());
+    final files = <XFile>[];
+
+    // Get all shifts (fetch 12 months back)
+    final allShifts = <Shift>[];
+    final now = DateTime.now();
+    for (int i = 0; i < 12; i++) {
+      final date = DateTime(now.year, now.month - i, 1);
+      final monthShifts =
+          await db.getShiftsForMonth(date.year, date.month);
+      allShifts.addAll(monthShifts);
+    }
+
+    if (allShifts.isNotEmpty) {
+      final csv = StringBuffer();
+      csv.writeln('날짜,근무유형,시작시간,종료시간,메모');
+      for (final s in allShifts) {
+        final date = DateFormat('yyyy-MM-dd').format(s.date);
+        final type = _shiftTypeLabel(s.type);
+        final start = s.startTime ?? '';
+        final end = s.endTime ?? '';
+        final note = _escapeCsv(s.note ?? '');
+        csv.writeln('$date,$type,$start,$end,$note');
+      }
+      final file = File('${dir.path}/change_shifts_$dateStr.csv');
+      await file.writeAsString(csv.toString());
+      files.add(XFile(file.path));
+    }
+
+    // Export sleep records
+    final sleepRecords = await db.getSleepRecords();
+    if (sleepRecords.isNotEmpty) {
+      final csv = StringBuffer();
+      csv.writeln('날짜,취침시간,기상시간,수면시간,품질(1-5),근무유형,출처,메모');
+      for (final r in sleepRecords) {
+        final date = DateFormat('yyyy-MM-dd').format(r.date);
+        final bed = DateFormat('yyyy-MM-dd HH:mm').format(r.bedTime);
+        final wake = DateFormat('yyyy-MM-dd HH:mm').format(r.wakeTime);
+        final hours = r.durationHours.toStringAsFixed(1);
+        final type = r.shiftType ?? '';
+        final source = r.source ?? 'manual';
+        final note = _escapeCsv(r.note ?? '');
+        csv.writeln('$date,$bed,$wake,$hours,${r.quality},$type,$source,$note');
+      }
+      final file = File('${dir.path}/change_sleep_$dateStr.csv');
+      await file.writeAsString(csv.toString());
+      files.add(XFile(file.path));
+    }
+
+    // Export energy records
+    final energyRecords = await db.getEnergyRecords();
+    if (energyRecords.isNotEmpty) {
+      final csv = StringBuffer();
+      csv.writeln('날짜,시간,에너지(1-5),근무유형,활동,기분,메모');
+      for (final r in energyRecords) {
+        final date = DateFormat('yyyy-MM-dd').format(r.date);
+        final time = DateFormat('HH:mm').format(r.timestamp);
+        final type = r.shiftType ?? '';
+        final activity = r.activity ?? '';
+        final mood = r.mood ?? '';
+        final note = _escapeCsv(r.note ?? '');
+        csv.writeln(
+            '$date,$time,${r.energyLevel},$type,$activity,$mood,$note');
+      }
+      final file = File('${dir.path}/change_energy_$dateStr.csv');
+      await file.writeAsString(csv.toString());
+      files.add(XFile(file.path));
+    }
+
+    if (files.isEmpty) return;
+
+    await SharePlus.instance.share(
+      ShareParams(
+        files: files,
+        subject: 'Change 앱 데이터 ($dateStr)',
+      ),
+    );
+  }
+
+  String _shiftTypeLabel(String type) {
+    switch (type) {
+      case 'day':
+        return '주간';
+      case 'evening':
+        return '오후';
+      case 'night':
+        return '야간';
+      case 'off':
+        return '휴무';
+      default:
+        return type;
+    }
+  }
+
+  String _escapeCsv(String value) {
+    if (value.contains(',') || value.contains('"') || value.contains('\n')) {
+      return '"${value.replaceAll('"', '""')}"';
+    }
+    return value;
+  }
 
   Future<void> exportAndShareMonth({
     required int year,
@@ -68,7 +175,7 @@ class ExportService {
       child: MediaQuery(
         data: const MediaQueryData(),
         child: Directionality(
-          textDirection: TextDirection.ltr,
+          textDirection: ui.TextDirection.ltr,
           child: widget,
         ),
       ),

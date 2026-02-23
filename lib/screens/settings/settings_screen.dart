@@ -14,6 +14,7 @@ import '../../utils/constants.dart';
 import '../../config/routes.dart';
 import 'profile_edit_screen.dart';
 import 'shift_times_screen.dart';
+import '../../services/export_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -340,11 +341,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _buildActionTile(
                     icon: Icons.download_rounded,
                     title: '데이터 내보내기',
-                    subtitle: '수면/근무 기록을 CSV로 내보내기',
-                    onTap: () {
+                    subtitle: '근무/수면/에너지 기록을 CSV로 내보내기',
+                    onTap: () async {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('데이터 내보내기 준비 중...')),
+                        const SnackBar(content: Text('CSV 파일 생성 중...')),
                       );
+                      try {
+                        await ExportService.instance.exportAllDataAsCsv();
+                      } catch (_) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('내보내기 중 오류가 발생했습니다')),
+                          );
+                        }
+                      }
                     },
                   ),
                   const Divider(height: 1, indent: 56),

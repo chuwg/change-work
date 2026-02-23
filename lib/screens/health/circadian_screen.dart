@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import '../../config/theme.dart';
 import '../../providers/health_provider.dart';
 import '../../providers/schedule_provider.dart';
+import '../../providers/sleep_provider.dart';
 import '../../services/ai_health_service.dart';
 
 class CircadianScreen extends ConsumerWidget {
@@ -124,6 +125,11 @@ class CircadianScreen extends ConsumerWidget {
 
             const SizedBox(height: 16),
 
+            // Sleep data summary
+            _buildSleepSummary(ref),
+
+            const SizedBox(height: 16),
+
             // Recommended times
             Container(
               padding: const EdgeInsets.all(20),
@@ -234,6 +240,118 @@ class CircadianScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSleepSummary(WidgetRef ref) {
+    final sleep = ref.watch(sleepProvider);
+    final avgHours = sleep.averageSleepHours;
+    final avgQuality = sleep.averageQuality;
+    final recordCount = sleep.last7Days.length;
+
+    if (recordCount == 0) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: AppTheme.glassCard,
+        child: Row(
+          children: [
+            Icon(Icons.info_outline_rounded,
+                color: AppTheme.textTertiary, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '수면 기록이 없습니다. 수면을 기록하거나 설정에서 건강 데이터 동기화를 켜주세요.',
+                style: TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: AppTheme.glassCard,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '최근 7일 수면 분석',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSleepStat(
+                  Icons.schedule_rounded,
+                  '평균 수면',
+                  '${avgHours.toStringAsFixed(1)}시간',
+                  avgHours >= 7 ? AppTheme.success : AppTheme.warning,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildSleepStat(
+                  Icons.star_rounded,
+                  '평균 품질',
+                  '${avgQuality.toStringAsFixed(1)}/5',
+                  avgQuality >= 3.5 ? AppTheme.success : AppTheme.warning,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildSleepStat(
+                  Icons.calendar_today_rounded,
+                  '기록 수',
+                  '$recordCount일',
+                  AppTheme.primary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSleepStat(
+      IconData icon, String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 11,
+            ),
+          ),
+        ],
       ),
     );
   }

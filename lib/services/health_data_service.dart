@@ -17,6 +17,10 @@ class HealthDataService {
     HealthDataType.SLEEP_ASLEEP,
     HealthDataType.SLEEP_IN_BED,
     HealthDataType.SLEEP_SESSION,
+    HealthDataType.SLEEP_DEEP,
+    HealthDataType.SLEEP_LIGHT,
+    HealthDataType.SLEEP_REM,
+    HealthDataType.SLEEP_AWAKE,
   ];
 
   static const _activityTypes = [
@@ -48,12 +52,23 @@ class HealthDataService {
   }
 
   /// Check if we already have authorization.
+  /// Note: On iOS, hasPermissions always returns null due to Apple privacy.
+  /// We rely on the cached _isAuthorized flag instead.
   Future<bool> hasAuthorization() async {
+    if (_isAuthorized) return true;
     try {
-      _isAuthorized = await _health.hasPermissions(_allTypes) ?? false;
-      return _isAuthorized;
-    } catch (_) {
+      final result = await _health.hasPermissions(_allTypes);
+      if (result == true) {
+        _isAuthorized = true;
+        return true;
+      }
+      // On iOS, result is always null - try a test fetch
+      if (Platform.isIOS) {
+        return _isAuthorized;
+      }
       return false;
+    } catch (_) {
+      return _isAuthorized;
     }
   }
 
