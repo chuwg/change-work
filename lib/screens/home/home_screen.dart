@@ -49,6 +49,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       // Reschedule shift reminder with latest schedule data
       await _rescheduleShiftReminder();
+      // Reschedule motivation notification with new random quote
+      await _rescheduleMotivationNotification();
 
       // Auto-sync sleep from HealthKit/Health Connect if enabled
       // Run in background to not block UI
@@ -57,6 +59,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // DB not available on web — load health tips only
       await ref.read(healthProvider.notifier).refreshHealthData();
     }
+  }
+
+  Future<void> _rescheduleMotivationNotification() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final enabled =
+          prefs.getBool(AppConstants.motivationEnabledKey) ?? false;
+      if (!enabled) return;
+      final hour = prefs.getInt(AppConstants.motivationHourKey) ?? 7;
+      final minute = prefs.getInt(AppConstants.motivationMinuteKey) ?? 0;
+      await NotificationService.instance.scheduleDailyMotivation(
+        id: 3000,
+        body: NotificationService.randomMotivationQuote(),
+        hour: hour,
+        minute: minute,
+      );
+    } catch (_) {}
   }
 
   Future<void> _rescheduleShiftReminder() async {

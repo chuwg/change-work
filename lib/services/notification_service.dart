@@ -137,6 +137,83 @@ class NotificationService {
     );
   }
 
+  /// Schedule a daily motivational message at the given hour:minute.
+  Future<void> scheduleDailyMotivation({
+    required int id,
+    required String body,
+    required int hour,
+    required int minute,
+  }) async {
+    final now = DateTime.now();
+    var scheduledTime = DateTime(now.year, now.month, now.day, hour, minute);
+    if (scheduledTime.isBefore(now)) {
+      scheduledTime = scheduledTime.add(const Duration(days: 1));
+    }
+
+    final tzScheduled = tz.TZDateTime(
+      tz.local,
+      scheduledTime.year,
+      scheduledTime.month,
+      scheduledTime.day,
+      scheduledTime.hour,
+      scheduledTime.minute,
+    );
+
+    await _plugin.zonedSchedule(
+      id,
+      '오늘의 한 마디',
+      body,
+      tzScheduled,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'motivation_daily',
+          '오늘의 동기부여',
+          channelDescription: '교대근무자를 위한 일일 동기부여 메시지',
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: false,
+          presentSound: true,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time,
+    );
+  }
+
+  /// Get a random motivational quote for shift workers.
+  static String randomMotivationQuote() {
+    final quotes = [
+      '교대근무는 힘들지만, 균형을 찾아가는 당신은 강인합니다.',
+      '오늘도 수고했습니다. 당신의 노력이 세상을 돌아가게 합니다.',
+      '불규칙한 일상 속에서도 규칙적인 나를 만드는 것, 그것이 진짜 힘입니다.',
+      '밤을 버텨낸 당신, 그 용기가 하루를 특별하게 만듭니다.',
+      '쉬는 날에 충분히 쉬는 것도 훌륭한 선택입니다.',
+      '당신이 지킨 자리가 있어 오늘도 세상이 안전합니다.',
+      '피곤함은 노력의 증거, 수면은 그 노력에 대한 보상입니다.',
+      '교대근무의 어려움을 아는 당신은 이미 남다른 사람입니다.',
+      '힘든 순간일수록 작은 것에서 행복을 찾는 연습을 해보세요.',
+      '당신의 헌신으로 누군가의 하루가 더 나아집니다.',
+      '밤을 지새우는 것, 그것은 강함의 또 다른 이름입니다.',
+      '지금 이 순간, 당신은 충분히 잘 하고 있습니다.',
+      '체력이 곧 자신감입니다. 오늘도 몸을 잘 챙기세요.',
+      '수면 1시간이 내일의 당신을 더 빛나게 만듭니다.',
+      '오늘 힘든 만큼 내일의 나는 더 단단해집니다.',
+      '근무 후 나를 위한 작은 보상, 잊지 마세요.',
+      '잘 자는 것도 실력입니다. 오늘 수면을 챙기세요.',
+      '교대근무자라는 것, 그 자체로 대단한 일을 하는 사람입니다.',
+      '오늘 하루도 무사히. 당신 덕분입니다.',
+      '몸이 먼저입니다. 건강이 있어야 모든 것이 가능합니다.',
+    ];
+    final index = DateTime.now().millisecondsSinceEpoch % quotes.length;
+    return quotes[index];
+  }
+
   Future<void> cancelNotification(int id) async {
     await _plugin.cancel(id);
   }

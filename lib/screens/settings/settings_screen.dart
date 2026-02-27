@@ -27,7 +27,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _sleepReminder = true;
   bool _shiftReminder = true;
   bool _healthTips = true;
+  bool _motivationEnabled = false;
   int _reminderMinutes = 60;
+  int _motivationHour = 7;
+  int _motivationMinute = 0;
   UserProfile? _profile;
 
   @override
@@ -48,7 +51,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       _sleepReminder = prefs.getBool(AppConstants.sleepReminderKey) ?? true;
       _shiftReminder = prefs.getBool(AppConstants.shiftReminderKey) ?? true;
       _healthTips = prefs.getBool(AppConstants.healthTipsKey) ?? true;
+      _motivationEnabled =
+          prefs.getBool(AppConstants.motivationEnabledKey) ?? false;
       _reminderMinutes = prefs.getInt(AppConstants.reminderMinutesKey) ?? 60;
+      _motivationHour = prefs.getInt(AppConstants.motivationHourKey) ?? 7;
+      _motivationMinute = prefs.getInt(AppConstants.motivationMinuteKey) ?? 0;
     });
   }
 
@@ -108,6 +115,54 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(AppConstants.healthTipsKey, value);
     setState(() => _healthTips = value);
+  }
+
+  Future<void> _saveMotivation({bool? enabled, int? hour, int? minute}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final newEnabled = enabled ?? _motivationEnabled;
+    final newHour = hour ?? _motivationHour;
+    final newMinute = minute ?? _motivationMinute;
+
+    await prefs.setBool(AppConstants.motivationEnabledKey, newEnabled);
+    await prefs.setInt(AppConstants.motivationHourKey, newHour);
+    await prefs.setInt(AppConstants.motivationMinuteKey, newMinute);
+
+    setState(() {
+      if (enabled != null) _motivationEnabled = newEnabled;
+      if (hour != null) _motivationHour = newHour;
+      if (minute != null) _motivationMinute = newMinute;
+    });
+
+    await NotificationService.instance.cancelNotification(3000);
+    if (newEnabled) {
+      await NotificationService.instance.scheduleDailyMotivation(
+        id: 3000,
+        body: NotificationService.randomMotivationQuote(),
+        hour: newHour,
+        minute: newMinute,
+      );
+    }
+  }
+
+  Future<void> _pickMotivationTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: _motivationHour, minute: _motivationMinute),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppTheme.primary,
+              surface: AppTheme.surfaceDarkElevated,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      await _saveMotivation(hour: picked.hour, minute: picked.minute);
+    }
   }
 
   Future<void> _saveReminderMinutes(int value) async {
@@ -282,6 +337,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     value: _healthTips,
                     onChanged: (v) => _saveHealthTips(v),
                   ),
+                  const Divider(height: 1, indent: 56),
+                  _buildSwitchTile(
+                    icon: Icons.format_quote_rounded,
+                    title: '오늘의 한 마디',
+                    subtitle: '교대근무자를 위한 동기부여 메시지',
+                    value: _motivationEnabled,
+                    onChanged: (v) => _saveMotivation(enabled: v),
+                  ),
+                  if (_motivationEnabled) ...[
+                    const Divider(height: 1, indent: 56),
+                    InkWell(
+                      onTap: _pickMotivationTime,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: AppTheme.primary.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.access_time_rounded,
+                                  color: AppTheme.primary, size: 18),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                '알림 시간',
+                                style: TextStyle(
+                                    color: AppTheme.textPrimary, fontSize: 14),
+                              ),
+                            ),
+                            Text(
+                              '${_motivationHour.toString().padLeft(2, '0')}:'
+                              '${_motivationMinute.toString().padLeft(2, '0')}',
+                              style: const TextStyle(
+                                color: AppTheme.primary,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.chevron_right_rounded,
+                                color: AppTheme.textTertiary, size: 18),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

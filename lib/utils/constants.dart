@@ -44,6 +44,9 @@ class AppConstants {
   static const String shiftReminderKey = 'shift_reminder';
   static const String healthTipsKey = 'health_tips';
   static const String reminderMinutesKey = 'reminder_minutes';
+  static const String motivationEnabledKey = 'motivation_enabled';
+  static const String motivationHourKey = 'motivation_hour';
+  static const String motivationMinuteKey = 'motivation_minute';
 
   // Health tip categories
   static const String tipSleep = 'sleep';
