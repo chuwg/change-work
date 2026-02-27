@@ -671,7 +671,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               decoration: AppTheme.glassCard,
               child: Column(
                 children: [
-                  _buildInfoTile('버전', '1.0.2'),
+                  _buildInfoTile('버전', '1.0.3'),
                   const Divider(height: 1, indent: 16),
                   _buildActionTile(
                     icon: Icons.star_outline_rounded,
