@@ -360,6 +360,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                   const Divider(height: 1, indent: 56),
                   _buildActionTile(
+                    icon: Icons.upload_rounded,
+                    title: '데이터 가져오기',
+                    subtitle: '내보낸 CSV 파일에서 데이터 복원',
+                    onTap: () async {
+                      try {
+                        final counts =
+                            await ExportService.instance.importFromCsv();
+                        if (counts.isEmpty) return;
+                        if (mounted) {
+                          final shifts = counts['shifts'] ?? 0;
+                          final sleep = counts['sleep'] ?? 0;
+                          final energy = counts['energy'] ?? 0;
+                          final total = shifts + sleep + energy;
+                          final msg = total == 0
+                              ? '가져올 새 데이터가 없습니다 (이미 존재하는 데이터)'
+                              : '가져오기 완료: 근무 $shifts개, 수면 $sleep개, 에너지 $energy개';
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(msg)),
+                          );
+                          // Reload providers
+                          final now = DateTime.now();
+                          ref.read(scheduleProvider.notifier)
+                              .loadShiftsForMonth(now.year, now.month);
+                          ref.read(sleepProvider.notifier).loadRecords();
+                        }
+                      } catch (_) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('가져오기 중 오류가 발생했습니다')),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _buildActionTile(
                     icon: Icons.delete_outline_rounded,
                     title: '데이터 초기화',
                     subtitle: '모든 기록을 삭제합니다',

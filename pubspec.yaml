@@ -46,9 +46,10 @@ dependencies:
   # Widget Support
   home_widget: ^0.7.0
 
-  # Export / Share
+  # Export / Share / Import
   share_plus: ^12.0.1
   path_provider: ^2.1.2
+  file_picker: ^8.0.0
 
 dev_dependencies:
   flutter_test:

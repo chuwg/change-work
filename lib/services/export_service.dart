@@ -1,13 +1,19 @@
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:uuid/uuid.dart';
 import '../models/shift.dart';
+import '../models/sleep_record.dart';
+import '../models/energy_record.dart';
 import '../widgets/export_calendar_widget.dart';
 import 'database_service.dart';
+
+const _uuid = Uuid();
 
 class ExportService {
   static final ExportService instance = ExportService._internal();
@@ -94,6 +100,217 @@ class ExportService {
         subject: 'Change 앱 데이터 ($dateStr)',
       ),
     );
+  }
+
+  /// Pick CSV files and import data. Returns count of imported records per type.
+  Future<Map<String, int>> importFromCsv() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['csv'],
+      allowMultiple: true,
+    );
+    if (result == null || result.files.isEmpty) return {};
+
+    final counts = {'shifts': 0, 'sleep': 0, 'energy': 0};
+
+    for (final file in result.files) {
+      if (file.path == null) continue;
+      final content = await File(file.path!).readAsString();
+      final filename = file.name.toLowerCase();
+
+      if (filename.contains('shift') || filename.contains('근무')) {
+        counts['shifts'] = await _importShiftsCsv(content);
+      } else if (filename.contains('sleep') || filename.contains('수면')) {
+        counts['sleep'] = await _importSleepCsv(content);
+      } else if (filename.contains('energy') || filename.contains('에너지')) {
+        counts['energy'] = await _importEnergyCsv(content);
+      } else {
+        // Detect by header row
+        final firstLine = content.split('\n').first;
+        if (firstLine.contains('근무유형') && firstLine.contains('시작시간')) {
+          counts['shifts'] = await _importShiftsCsv(content);
+        } else if (firstLine.contains('취침시간')) {
+          counts['sleep'] = await _importSleepCsv(content);
+        } else if (firstLine.contains('에너지')) {
+          counts['energy'] = await _importEnergyCsv(content);
+        }
+      }
+    }
+
+    return counts;
+  }
+
+  Future<int> _importShiftsCsv(String content) async {
+    final db = DatabaseService.instance;
+    final lines = content.trim().split('\n');
+    if (lines.length < 2) return 0;
+
+    // Get existing shift dates to skip duplicates
+    final now = DateTime.now();
+    final existingShifts = <String>{};
+    for (int i = -3; i <= 3; i++) {
+      final date = DateTime(now.year, now.month + i, 1);
+      final shifts = await db.getShiftsForMonth(date.year, date.month);
+      for (final s in shifts) {
+        existingShifts.add(DateFormat('yyyy-MM-dd').format(s.date));
+      }
+    }
+
+    int count = 0;
+    for (int i = 1; i < lines.length; i++) {
+      final line = lines[i].trim();
+      if (line.isEmpty) continue;
+      final cols = _parseCsvLine(line);
+      if (cols.length < 2) continue;
+
+      try {
+        final dateStr = cols[0].trim();
+        final typeLabel = cols[1].trim();
+        if (existingShifts.contains(dateStr)) continue;
+
+        final date = DateFormat('yyyy-MM-dd').parse(dateStr);
+        final type = _shiftTypeLabelToCode(typeLabel);
+        final startTime = cols.length > 2 ? cols[2].trim() : null;
+        final endTime = cols.length > 3 ? cols[3].trim() : null;
+        final note = cols.length > 4 ? cols[4].trim() : null;
+
+        await db.insertShift(Shift(
+          id: _uuid.v4(),
+          date: date,
+          type: type,
+          startTime: startTime?.isEmpty == true ? null : startTime,
+          endTime: endTime?.isEmpty == true ? null : endTime,
+          note: note?.isEmpty == true ? null : note,
+        ));
+        count++;
+      } catch (_) {}
+    }
+    return count;
+  }
+
+  Future<int> _importSleepCsv(String content) async {
+    final db = DatabaseService.instance;
+    final lines = content.trim().split('\n');
+    if (lines.length < 2) return 0;
+
+    // Get existing sleep dates
+    final existing = await db.getSleepRecords(limit: 1000);
+    final existingDates = existing
+        .map((r) => DateFormat('yyyy-MM-dd').format(r.date))
+        .toSet();
+
+    int count = 0;
+    for (int i = 1; i < lines.length; i++) {
+      final line = lines[i].trim();
+      if (line.isEmpty) continue;
+      final cols = _parseCsvLine(line);
+      if (cols.length < 5) continue;
+
+      try {
+        final dateStr = cols[0].trim();
+        if (existingDates.contains(dateStr)) continue;
+
+        final date = DateFormat('yyyy-MM-dd').parse(dateStr);
+        final bedTime = DateFormat('yyyy-MM-dd HH:mm').parse(cols[1].trim());
+        final wakeTime = DateFormat('yyyy-MM-dd HH:mm').parse(cols[2].trim());
+        final quality = int.parse(cols[4].trim()).clamp(1, 5);
+        final shiftType = cols.length > 5 ? cols[5].trim() : null;
+        final note = cols.length > 7 ? cols[7].trim() : null;
+
+        await db.insertSleepRecord(SleepRecord(
+          id: _uuid.v4(),
+          date: date,
+          bedTime: bedTime,
+          wakeTime: wakeTime,
+          quality: quality,
+          shiftType: shiftType?.isEmpty == true ? null : shiftType,
+          note: note?.isEmpty == true ? null : note,
+        ));
+        count++;
+      } catch (_) {}
+    }
+    return count;
+  }
+
+  Future<int> _importEnergyCsv(String content) async {
+    final db = DatabaseService.instance;
+    final lines = content.trim().split('\n');
+    if (lines.length < 2) return 0;
+
+    int count = 0;
+    for (int i = 1; i < lines.length; i++) {
+      final line = lines[i].trim();
+      if (line.isEmpty) continue;
+      final cols = _parseCsvLine(line);
+      if (cols.length < 3) continue;
+
+      try {
+        final dateStr = cols[0].trim();
+        final timeStr = cols[1].trim();
+        final level = int.parse(cols[2].trim()).clamp(1, 5);
+        final shiftType = cols.length > 3 ? cols[3].trim() : null;
+        final activity = cols.length > 4 ? cols[4].trim() : null;
+        final mood = cols.length > 5 ? cols[5].trim() : null;
+        final note = cols.length > 6 ? cols[6].trim() : null;
+
+        final date = DateFormat('yyyy-MM-dd').parse(dateStr);
+        final timeParts = timeStr.split(':');
+        final timestamp = DateTime(
+          date.year, date.month, date.day,
+          int.parse(timeParts[0]), int.parse(timeParts[1]),
+        );
+
+        await db.insertEnergyRecord(EnergyRecord(
+          id: _uuid.v4(),
+          date: date,
+          timestamp: timestamp,
+          energyLevel: level,
+          shiftType: shiftType?.isEmpty == true ? null : shiftType,
+          activity: activity?.isEmpty == true ? null : activity,
+          mood: mood?.isEmpty == true ? null : mood,
+          note: note?.isEmpty == true ? null : note,
+          source: 'import',
+        ));
+        count++;
+      } catch (_) {}
+    }
+    return count;
+  }
+
+  /// Parse a single CSV line handling quoted fields
+  List<String> _parseCsvLine(String line) {
+    final result = <String>[];
+    final buffer = StringBuffer();
+    bool inQuotes = false;
+
+    for (int i = 0; i < line.length; i++) {
+      final ch = line[i];
+      if (ch == '"') {
+        if (inQuotes && i + 1 < line.length && line[i + 1] == '"') {
+          buffer.write('"');
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (ch == ',' && !inQuotes) {
+        result.add(buffer.toString());
+        buffer.clear();
+      } else {
+        buffer.write(ch);
+      }
+    }
+    result.add(buffer.toString());
+    return result;
+  }
+
+  String _shiftTypeLabelToCode(String label) {
+    switch (label) {
+      case '주간': return 'day';
+      case '오후': return 'evening';
+      case '야간': return 'night';
+      case '휴무': return 'off';
+      default: return label; // already in English
+    }
   }
 
   String _shiftTypeLabel(String type) {
