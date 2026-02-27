@@ -166,8 +166,9 @@ class SalaryNotifier extends StateNotifier<SalaryState> {
 
     // Pay components
     final basePay = totalWorkHours * effectiveHourlyRate;
-    final nightPremium =
-        totalNightHours * effectiveHourlyRate * (settings.nightMultiplier - 1);
+    final nightPremium = settings.nightAllowanceType == nightAllowanceFixed
+        ? nightShiftCount * settings.nightFixedAmount
+        : totalNightHours * effectiveHourlyRate * (settings.nightMultiplier - 1);
     final weekendPremium = weekendWorkHours *
         effectiveHourlyRate *
         (settings.weekendMultiplier - 1);
@@ -191,8 +192,11 @@ class SalaryNotifier extends StateNotifier<SalaryState> {
       final a = e.value;
       final regularH = a.totalHours - a.nightHours;
       final bp = a.totalHours * effectiveHourlyRate;
-      final np =
-          a.nightHours * effectiveHourlyRate * (settings.nightMultiplier - 1);
+      final np = settings.nightAllowanceType == nightAllowanceFixed
+          ? (e.key == AppConstants.shiftNight
+              ? a.count * settings.nightFixedAmount
+              : 0.0)
+          : a.nightHours * effectiveHourlyRate * (settings.nightMultiplier - 1);
       return ShiftSalaryBreakdown(
         shiftType: e.key,
         count: a.count,

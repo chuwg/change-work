@@ -15,9 +15,11 @@ class SalarySettingsScreen extends ConsumerStatefulWidget {
 
 class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
   late String _payType;
+  late String _nightAllowanceType;
   late TextEditingController _hourlyController;
   late TextEditingController _monthlyController;
   late TextEditingController _nightMultController;
+  late TextEditingController _nightFixedController;
   late TextEditingController _weekendMultController;
   late TextEditingController _overtimeMultController;
   late List<FixedAllowance> _fixedAllowances;
@@ -27,12 +29,15 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
     super.initState();
     final settings = ref.read(salaryProvider).settings;
     _payType = settings.payType;
+    _nightAllowanceType = settings.nightAllowanceType;
     _hourlyController =
         TextEditingController(text: settings.hourlyRate.toStringAsFixed(0));
     _monthlyController =
         TextEditingController(text: settings.monthlySalary.toStringAsFixed(0));
     _nightMultController =
         TextEditingController(text: settings.nightMultiplier.toString());
+    _nightFixedController =
+        TextEditingController(text: settings.nightFixedAmount.toStringAsFixed(0));
     _weekendMultController =
         TextEditingController(text: settings.weekendMultiplier.toString());
     _overtimeMultController =
@@ -45,6 +50,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
     _hourlyController.dispose();
     _monthlyController.dispose();
     _nightMultController.dispose();
+    _nightFixedController.dispose();
     _weekendMultController.dispose();
     _overtimeMultController.dispose();
     super.dispose();
@@ -55,8 +61,10 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
       payType: _payType,
       hourlyRate: double.tryParse(_hourlyController.text) ?? 9860.0,
       monthlySalary: double.tryParse(_monthlyController.text) ?? 2500000.0,
+      nightAllowanceType: _nightAllowanceType,
       nightMultiplier: double.tryParse(_nightMultController.text) ??
           AppConstants.defaultNightMultiplier,
+      nightFixedAmount: double.tryParse(_nightFixedController.text) ?? 0.0,
       weekendMultiplier: double.tryParse(_weekendMultController.text) ??
           AppConstants.defaultWeekendMultiplier,
       overtimeMultiplier: double.tryParse(_overtimeMultController.text) ??
@@ -239,21 +247,51 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
 
           const SizedBox(height: 24),
 
-          // Multiplier section
-          _buildSectionLabel('수당 배율'),
+          // Night allowance section
+          _buildSectionLabel('야간 수당'),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _buildNightTypeChip(nightAllowanceMultiplier, '배수 방식'),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildNightTypeChip(nightAllowanceFixed, '고정금액'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: AppTheme.glassCard,
+            child: _nightAllowanceType == nightAllowanceFixed
+                ? _buildNightFixedRow()
+                : _buildMultiplierRow(
+                    '야간 수당',
+                    Icons.nightlight_round,
+                    AppTheme.shiftNight,
+                    _nightMultController,
+                  ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _nightAllowanceType == nightAllowanceFixed
+                ? '야간 근무 1회당 지급되는 고정 금액'
+                : '야간 시간대(22:00~06:00) 기본급 대비 배율',
+            style: const TextStyle(color: AppTheme.textTertiary, fontSize: 12),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Weekend/overtime section
+          _buildSectionLabel('주말·연장 수당'),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: AppTheme.glassCard,
             child: Column(
               children: [
-                _buildMultiplierRow(
-                  '야간 수당',
-                  Icons.nightlight_round,
-                  AppTheme.shiftNight,
-                  _nightMultController,
-                ),
-                const SizedBox(height: 16),
                 _buildMultiplierRow(
                   '주말 수당',
                   Icons.weekend_rounded,
@@ -395,6 +433,81 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
         fontSize: 13,
         fontWeight: FontWeight.w600,
       ),
+    );
+  }
+
+  Widget _buildNightTypeChip(String type, String label) {
+    final selected = _nightAllowanceType == type;
+    return GestureDetector(
+      onTap: () => setState(() => _nightAllowanceType = type),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppTheme.shiftNight.withValues(alpha: 0.15)
+              : AppTheme.surfaceDarkElevated,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected
+                ? AppTheme.shiftNight.withValues(alpha: 0.5)
+                : Colors.white.withValues(alpha: 0.06),
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? AppTheme.shiftNight : AppTheme.textSecondary,
+              fontSize: 13,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNightFixedRow() {
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: AppTheme.shiftNight.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.nightlight_round,
+              color: AppTheme.shiftNight, size: 18),
+        ),
+        const SizedBox(width: 12),
+        const Expanded(
+          child: Text(
+            '야간 근무당',
+            style: TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+          ),
+        ),
+        SizedBox(
+          width: 120,
+          child: TextField(
+            controller: _nightFixedController,
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+            decoration: const InputDecoration(
+              suffixText: '원',
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              isDense: true,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
