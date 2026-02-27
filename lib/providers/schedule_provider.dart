@@ -51,6 +51,18 @@ class ScheduleState {
   Shift? get nextShift {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+
+    // Check today's shift first — only if start time hasn't passed yet
+    final todayShift = getShiftForDate(today);
+    if (todayShift != null &&
+        todayShift.type != AppConstants.shiftOff &&
+        todayShift.startTime != null) {
+      final parts = todayShift.startTime!.split(':');
+      final shiftStart = DateTime(today.year, today.month, today.day,
+          int.parse(parts[0]), int.parse(parts[1]));
+      if (shiftStart.isAfter(now)) return todayShift;
+    }
+
     for (int i = 1; i <= 30; i++) {
       final date = today.add(Duration(days: i));
       final shift = getShiftForDate(date);

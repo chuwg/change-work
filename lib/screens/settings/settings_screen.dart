@@ -87,27 +87,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     await prefs.setBool(AppConstants.shiftReminderKey, value);
     setState(() => _shiftReminder = value);
 
-    if (value) {
-      final schedule = ref.read(scheduleProvider);
-      final nextShift = schedule.nextShift;
-      if (nextShift != null && nextShift.startTime != null) {
-        final parts = nextShift.startTime!.split(':');
-        final shiftStart = DateTime(
-          nextShift.date.year,
-          nextShift.date.month,
-          nextShift.date.day,
-          int.parse(parts[0]),
-          int.parse(parts[1]),
-        );
-        await NotificationService.instance.scheduleShiftReminder(
-          id: 2000,
-          shiftType: nextShift.type,
-          shiftStart: shiftStart,
-          minutesBefore: _reminderMinutes,
-        );
-      }
-    } else {
-      await NotificationService.instance.cancelNotification(2000);
+    // Cancel all previously scheduled shift reminders (slots 0-6)
+    for (int slot = 0; slot < 7; slot++) {
+      await NotificationService.instance.cancelNotification(2000 + slot);
+    }
+
+    if (!value) return;
+
+    // Schedule up to 7 upcoming shifts in advance
+    final schedule = ref.read(scheduleProvider);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    int slot = 0;
+    for (int i = 0; i <= 14 && slot < 7; i++) {
+      final date = today.add(Duration(days: i));
+      final shift = schedule.getShiftForDate(date);
+      if (shift == null ||
+          shift.type == AppConstants.shiftOff ||
+          shift.startTime == null) continue;
+      final parts = shift.startTime!.split(':');
+      final shiftStart = DateTime(
+        date.year, date.month, date.day,
+        int.parse(parts[0]), int.parse(parts[1]),
+      );
+      await NotificationService.instance.scheduleShiftReminder(
+        id: 2000 + slot,
+        shiftType: shift.type,
+        shiftStart: shiftStart,
+        minutesBefore: _reminderMinutes,
+      );
+      slot++;
     }
   }
 
