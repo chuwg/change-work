@@ -120,6 +120,66 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  Future<void> _pickCommuteMinutes() async {
+    final controller =
+        TextEditingController(text: _reminderMinutes.toString());
+    final result = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDarkElevated,
+        title: const Text(
+          '이동 시간 설정',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              '근무지까지 이동하는 데 걸리는 시간을 입력하세요.\n출발 알림이 이 시간에 맞춰 울립니다.',
+              style:
+                  TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+              ),
+              decoration: const InputDecoration(
+                suffixText: '분',
+                suffixStyle: TextStyle(
+                    color: AppTheme.textSecondary, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('취소',
+                style: TextStyle(color: AppTheme.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () {
+              final val = int.tryParse(controller.text);
+              if (val != null && val > 0 && val <= 300) {
+                Navigator.pop(ctx, val);
+              }
+            },
+            child: const Text('확인',
+                style: TextStyle(color: AppTheme.primary)),
+          ),
+        ],
+      ),
+    );
+    if (result != null) await _saveReminderMinutes(result);
+  }
+
   Future<void> _saveHealthTips(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(AppConstants.healthTipsKey, value);
@@ -403,38 +463,55 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
 
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: AppTheme.glassCard,
-              child: Row(
-                children: [
-                  const Icon(Icons.timer_rounded,
-                      color: AppTheme.primary, size: 20),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      '출근 전 알림 시간',
-                      style: TextStyle(
-                          color: AppTheme.textPrimary, fontSize: 14),
+            GestureDetector(
+              onTap: _pickCommuteMinutes,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: AppTheme.glassCard,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.directions_walk_rounded,
+                          color: AppTheme.primary, size: 18),
                     ),
-                  ),
-                  DropdownButton<int>(
-                    value: _reminderMinutes,
-                    dropdownColor: AppTheme.surfaceDarkElevated,
-                    underline: const SizedBox(),
-                    style: const TextStyle(
-                        color: AppTheme.primary, fontSize: 14),
-                    items: const [
-                      DropdownMenuItem(value: 30, child: Text('30분 전')),
-                      DropdownMenuItem(value: 60, child: Text('1시간 전')),
-                      DropdownMenuItem(value: 90, child: Text('1시간 30분 전')),
-                      DropdownMenuItem(value: 120, child: Text('2시간 전')),
-                    ],
-                    onChanged: (v) {
-                      if (v != null) _saveReminderMinutes(v);
-                    },
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '이동 시간',
+                            style: TextStyle(
+                                color: AppTheme.textPrimary, fontSize: 14),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            '근무지까지 걸리는 시간',
+                            style: TextStyle(
+                                color: AppTheme.textSecondary, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '$_reminderMinutes분',
+                      style: const TextStyle(
+                        color: AppTheme.primary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.chevron_right_rounded,
+                        color: AppTheme.textTertiary, size: 18),
+                  ],
+                ),
               ),
             ),
 

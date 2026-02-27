@@ -111,10 +111,13 @@ class NotificationService {
 
     final tzReminder = tz.TZDateTime.from(reminderTime, tz.local);
 
+    final startTimeStr =
+        '${shiftStart.hour.toString().padLeft(2, '0')}:${shiftStart.minute.toString().padLeft(2, '0')}';
+
     await _plugin.zonedSchedule(
       id,
-      '$shiftLabel 근무 준비',
-      '${minutesBefore}분 후 $shiftLabel 근무가 시작됩니다. 준비하세요!',
+      '지금 출발하세요!',
+      '$shiftLabel 근무 $startTimeStr 시작 · 이동 시간 ${minutesBefore}분',
       tzReminder,
       const NotificationDetails(
         android: AndroidNotificationDetails(
