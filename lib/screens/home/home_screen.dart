@@ -49,6 +49,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       // Reschedule shift reminder with latest schedule data
       await _rescheduleShiftReminder();
+
+      // Auto-sync sleep from HealthKit/Health Connect if enabled
+      // Run in background to not block UI
+      ref.read(healthSyncProvider.notifier).autoSync();
     } catch (_) {
       // DB not available on web — load health tips only
       await ref.read(healthProvider.notifier).refreshHealthData();
