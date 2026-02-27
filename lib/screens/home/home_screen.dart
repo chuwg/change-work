@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/theme.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/sleep_provider.dart';
@@ -7,6 +8,7 @@ import '../../providers/health_provider.dart';
 import '../../providers/energy_provider.dart';
 import '../../providers/salary_provider.dart';
 import '../../utils/helpers.dart';
+import '../../utils/constants.dart';
 import '../../widgets/shift_card.dart';
 import '../../widgets/health_tip_card.dart';
 import '../../widgets/sleep_summary_card.dart';
@@ -14,6 +16,8 @@ import '../../widgets/energy_summary_card.dart';
 import '../../widgets/salary_summary_card.dart';
 import '../../widgets/circadian_mini_clock.dart';
 import '../../providers/health_sync_provider.dart';
+import '../../providers/tab_provider.dart';
+import '../../services/notification_service.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -42,10 +46,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       await ref
           .read(salaryProvider.notifier)
           .calculateForMonth(now.year, now.month);
+
+      // Reschedule shift reminder with latest schedule data
+      await _rescheduleShiftReminder();
     } catch (_) {
       // DB not available on web — load health tips only
       await ref.read(healthProvider.notifier).refreshHealthData();
     }
+  }
+
+  Future<void> _rescheduleShiftReminder() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final enabled = prefs.getBool(AppConstants.shiftReminderKey) ?? true;
+      if (!enabled) return;
+
+      final minutesBefore = prefs.getInt(AppConstants.reminderMinutesKey) ?? 60;
+      final schedule = ref.read(scheduleProvider);
+      final nextShift = schedule.nextShift;
+
+      if (nextShift != null && nextShift.startTime != null) {
+        final parts = nextShift.startTime!.split(':');
+        final shiftStart = DateTime(
+          nextShift.date.year,
+          nextShift.date.month,
+          nextShift.date.day,
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+        );
+        await NotificationService.instance.scheduleShiftReminder(
+          id: 2000,
+          shiftType: nextShift.type,
+          shiftStart: shiftStart,
+          minutesBefore: minutesBefore,
+        );
+      }
+    } catch (_) {}
   }
 
   @override
@@ -129,16 +165,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-              // Energy Summary Card
+              // Energy Summary Card (estimated from sleep if no manual records)
               SliverToBoxAdapter(
                 child: Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                  child: EnergySummaryCard(
-                    averageEnergy: energy.todayAverageEnergy,
-                    latestLevel: energy.latestToday?.energyLevel,
-                    latestTime: energy.latestToday?.timestamp,
-                  ),
+                  child: Builder(builder: (_) {
+                    final hasEnergyToday = energy.todayAverageEnergy > 0;
+                    final todaySleep = sleep.todayRecord;
+                    final isEstimated = !hasEnergyToday && todaySleep != null;
+                    final estimatedLevel = isEstimated
+                        ? _estimateEnergy(todaySleep!.durationHours, todaySleep.quality)
+                        : null;
+                    return EnergySummaryCard(
+                      averageEnergy: isEstimated
+                          ? estimatedLevel!.toDouble()
+                          : energy.todayAverageEnergy,
+                      latestLevel: isEstimated ? estimatedLevel : energy.latestToday?.energyLevel,
+                      latestTime: energy.latestToday?.timestamp,
+                      isEstimated: isEstimated,
+                    );
+                  }),
                 ),
               ),
 
@@ -202,7 +249,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       TextButton(
                         onPressed: () {
-                          // Navigate to calendar tab
+                          ref.read(tabIndexProvider.notifier).state = 1;
                         },
                         child: const Text('전체보기'),
                       ),
@@ -342,6 +389,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
     );
+  }
+
+  /// Estimate energy level (1-5) from sleep data
+  int _estimateEnergy(double sleepHours, int quality) {
+    final hoursScore = sleepHours >= 8
+        ? 5.0
+        : sleepHours >= 7
+            ? 4.0
+            : sleepHours >= 6
+                ? 3.0
+                : sleepHours >= 5
+                    ? 2.0
+                    : 1.0;
+    return (hoursScore * 0.6 + quality * 0.4).round().clamp(1, 5);
   }
 
   String _formatNumber(int number) {

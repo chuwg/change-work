@@ -12,6 +12,7 @@ import 'screens/onboarding/onboarding_screen.dart';
 import 'services/widget_service.dart';
 import 'providers/schedule_provider.dart';
 import 'providers/energy_provider.dart';
+import 'providers/tab_provider.dart';
 
 class ChangeApp extends ConsumerWidget {
   const ChangeApp({super.key});
@@ -102,8 +103,6 @@ class MainShell extends ConsumerStatefulWidget {
 
 class _MainShellState extends ConsumerState<MainShell>
     with WidgetsBindingObserver {
-  int _currentIndex = 0;
-
   final List<Widget> _screens = const [
     HomeScreen(),
     CalendarScreen(),
@@ -159,7 +158,7 @@ class _MainShellState extends ConsumerState<MainShell>
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
-        index: _currentIndex,
+        index: ref.watch(tabIndexProvider),
         children: _screens,
       ),
       bottomNavigationBar: Container(
@@ -177,11 +176,11 @@ class _MainShellState extends ConsumerState<MainShell>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, Icons.home_rounded, '홈'),
-                _buildNavItem(1, Icons.calendar_month_rounded, '캘린더'),
-                _buildNavItem(2, Icons.monitor_heart_rounded, '컨디션'),
-                _buildNavItem(3, Icons.favorite_rounded, '건강'),
-                _buildNavItem(4, Icons.settings_rounded, '설정'),
+                _buildNavItem(0, Icons.home_rounded, '홈', ref.watch(tabIndexProvider)),
+                _buildNavItem(1, Icons.calendar_month_rounded, '캘린더', ref.watch(tabIndexProvider)),
+                _buildNavItem(2, Icons.monitor_heart_rounded, '컨디션', ref.watch(tabIndexProvider)),
+                _buildNavItem(3, Icons.favorite_rounded, '건강', ref.watch(tabIndexProvider)),
+                _buildNavItem(4, Icons.settings_rounded, '설정', ref.watch(tabIndexProvider)),
               ],
             ),
           ),
@@ -190,10 +189,10 @@ class _MainShellState extends ConsumerState<MainShell>
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label) {
-    final isSelected = _currentIndex == index;
+  Widget _buildNavItem(int index, IconData icon, String label, int currentIndex) {
+    final isSelected = currentIndex == index;
     return GestureDetector(
-      onTap: () => setState(() => _currentIndex = index),
+      onTap: () => ref.read(tabIndexProvider.notifier).state = index,
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

@@ -7,6 +7,7 @@ class EnergySummaryCard extends StatelessWidget {
   final int? latestLevel;
   final DateTime? latestTime;
   final VoidCallback? onQuickLog;
+  final bool isEstimated;
 
   const EnergySummaryCard({
     super.key,
@@ -14,6 +15,7 @@ class EnergySummaryCard extends StatelessWidget {
     this.latestLevel,
     this.latestTime,
     this.onQuickLog,
+    this.isEstimated = false,
   });
 
   @override
@@ -44,13 +46,27 @@ class EnergySummaryCard extends StatelessWidget {
                 size: 16,
               ),
               const SizedBox(width: 6),
-              const Expanded(
-                child: Text(
-                  '에너지',
-                  style: TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 12,
-                  ),
+              Expanded(
+                child: Row(
+                  children: [
+                    const Text(
+                      '에너지',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                    if (isEstimated) ...[
+                      const SizedBox(width: 4),
+                      const Text(
+                        '추정',
+                        style: TextStyle(
+                          color: AppTheme.textTertiary,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               if (onQuickLog != null)

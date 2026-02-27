@@ -15,6 +15,8 @@ class NotificationService {
     if (_isInitialized) return;
 
     tz_data.initializeTimeZones();
+    // Set to Korea Standard Time (KST = UTC+9)
+    tz.setLocalLocation(tz.getLocation('Asia/Seoul'));
 
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -45,17 +47,27 @@ class NotificationService {
         ?.requestNotificationsPermission();
   }
 
+  /// Schedule a daily sleep reminder at the given time (repeats every day)
   Future<void> scheduleSleepReminder({
     required int id,
     required String title,
     required String body,
     required DateTime scheduledTime,
   }) async {
+    final tzScheduled = tz.TZDateTime(
+      tz.local,
+      scheduledTime.year,
+      scheduledTime.month,
+      scheduledTime.day,
+      scheduledTime.hour,
+      scheduledTime.minute,
+    );
+
     await _plugin.zonedSchedule(
       id,
       title,
       body,
-      tz.TZDateTime.from(scheduledTime, tz.local),
+      tzScheduled,
       const NotificationDetails(
         android: AndroidNotificationDetails(
           'sleep_reminder',
@@ -74,9 +86,11 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time, // Repeat daily
     );
   }
 
+  /// Schedule a one-time shift start reminder
   Future<void> scheduleShiftReminder({
     required int id,
     required String shiftType,
@@ -86,17 +100,22 @@ class NotificationService {
     final reminderTime =
         shiftStart.subtract(Duration(minutes: minutesBefore));
 
+    // Skip if reminder time is in the past
+    if (reminderTime.isBefore(DateTime.now())) return;
+
     final shiftLabel = {
       'day': '주간',
       'evening': '오후',
       'night': '야간',
     }[shiftType] ?? shiftType;
 
+    final tzReminder = tz.TZDateTime.from(reminderTime, tz.local);
+
     await _plugin.zonedSchedule(
       id,
       '$shiftLabel 근무 준비',
       '${minutesBefore}분 후 $shiftLabel 근무가 시작됩니다. 준비하세요!',
-      tz.TZDateTime.from(reminderTime, tz.local),
+      tzReminder,
       const NotificationDetails(
         android: AndroidNotificationDetails(
           'shift_reminder',
