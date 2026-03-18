@@ -146,9 +146,10 @@ class SalaryNotifier extends StateNotifier<SalaryState> {
       if (shift.type == AppConstants.shiftNight) nightShiftCount++;
     }
 
-    // Effective hourly rate
+    // Effective hourly rate (for premium calculations)
+    final bool isMonthly = settings.payType == AppConstants.payTypeMonthly;
     double effectiveHourlyRate;
-    if (settings.payType == AppConstants.payTypeMonthly) {
+    if (isMonthly) {
       final totalShiftHours =
           workingShifts.length * AppConstants.defaultShiftHours;
       effectiveHourlyRate =
@@ -157,24 +158,27 @@ class SalaryNotifier extends StateNotifier<SalaryState> {
       effectiveHourlyRate = settings.hourlyRate;
     }
 
-    // Overtime
-    final weeksInMonth = _daysInMonth(year, month) / 7.0;
-    final overtimeHours = max(
-        0.0,
-        totalWorkHours -
-            (AppConstants.overtimeThresholdHoursPerWeek * weeksInMonth));
+    // Overtime: only count hours beyond standard shift hours, not legal 40h/week
+    final standardHours =
+        workingShifts.length * AppConstants.defaultShiftHours;
+    final overtimeHours = max(0.0, totalWorkHours - standardHours);
 
     // Pay components
-    final basePay = totalWorkHours * effectiveHourlyRate;
+    // For monthly salary, basePay = monthlySalary (fixed amount)
+    final basePay = isMonthly
+        ? settings.monthlySalary
+        : totalWorkHours * effectiveHourlyRate;
     final nightPremium = settings.nightAllowanceType == nightAllowanceFixed
         ? nightShiftCount * settings.nightFixedAmount
-        : totalNightHours * effectiveHourlyRate * (settings.nightMultiplier - 1);
+        : totalNightHours *
+            effectiveHourlyRate *
+            max(0.0, settings.nightMultiplier - 1);
     final weekendPremium = weekendWorkHours *
         effectiveHourlyRate *
-        (settings.weekendMultiplier - 1);
+        max(0.0, settings.weekendMultiplier - 1);
     final overtimePay = overtimeHours *
         effectiveHourlyRate *
-        (settings.overtimeMultiplier - 1);
+        max(0.0, settings.overtimeMultiplier - 1);
 
     // Fixed allowances
     double fixedTotal = 0;
@@ -196,7 +200,9 @@ class SalaryNotifier extends StateNotifier<SalaryState> {
           ? (e.key == AppConstants.shiftNight
               ? a.count * settings.nightFixedAmount
               : 0.0)
-          : a.nightHours * effectiveHourlyRate * (settings.nightMultiplier - 1);
+          : a.nightHours *
+              effectiveHourlyRate *
+              max(0.0, settings.nightMultiplier - 1);
       return ShiftSalaryBreakdown(
         shiftType: e.key,
         count: a.count,
