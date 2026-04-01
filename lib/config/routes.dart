@@ -10,6 +10,7 @@ import '../screens/settings/settings_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/salary/salary_screen.dart';
 import '../screens/salary/salary_settings_screen.dart';
+import '../screens/report/weekly_report_screen.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -25,6 +26,7 @@ class AppRoutes {
   static const String settings = '/settings';
   static const String salary = '/salary';
   static const String salarySettings = '/salary-settings';
+  static const String weeklyReport = '/weekly-report';
 
   static Map<String, WidgetBuilder> get routes => {
         onboarding: (context) => const OnboardingScreen(),
@@ -38,5 +40,6 @@ class AppRoutes {
         settings: (context) => const SettingsScreen(),
         salary: (context) => const SalaryScreen(),
         salarySettings: (context) => const SalarySettingsScreen(),
+        weeklyReport: (context) => const WeeklyReportScreen(),
       };
 }

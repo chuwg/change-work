@@ -5,7 +5,6 @@ import 'config/theme.dart';
 import 'config/routes.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/calendar/calendar_screen.dart';
-import 'screens/health/health_coach_screen.dart';
 import 'screens/condition/condition_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
@@ -107,7 +106,6 @@ class _MainShellState extends ConsumerState<MainShell>
     HomeScreen(),
     CalendarScreen(),
     ConditionScreen(),
-    HealthCoachScreen(),
     SettingsScreen(),
   ];
 
@@ -179,8 +177,7 @@ class _MainShellState extends ConsumerState<MainShell>
                 _buildNavItem(0, Icons.home_rounded, '홈', ref.watch(tabIndexProvider)),
                 _buildNavItem(1, Icons.calendar_month_rounded, '캘린더', ref.watch(tabIndexProvider)),
                 _buildNavItem(2, Icons.monitor_heart_rounded, '컨디션', ref.watch(tabIndexProvider)),
-                _buildNavItem(3, Icons.favorite_rounded, '건강', ref.watch(tabIndexProvider)),
-                _buildNavItem(4, Icons.settings_rounded, '설정', ref.watch(tabIndexProvider)),
+                _buildNavItem(3, Icons.settings_rounded, '설정', ref.watch(tabIndexProvider)),
               ],
             ),
           ),

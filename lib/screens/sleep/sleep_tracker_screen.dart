@@ -136,20 +136,71 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            ElevatedButton.icon(
-                              onPressed: () => _showAddSleepRecord(context),
-                              icon: const Icon(Icons.add, size: 18),
-                              label: const Text('수면 기록하기'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white24,
-                                foregroundColor: Colors.white,
-                              ),
+                        if (ref.watch(healthSyncProvider).syncEnabled) ...[
+                          if (ref.watch(healthSyncProvider).isSyncing)
+                            const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  '건강 데이터에서 동기화 중...',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            )
+                          else
+                            Row(
+                              children: [
+                                const Icon(Icons.watch_rounded,
+                                    color: Colors.white54, size: 16),
+                                const SizedBox(width: 6),
+                                Text(
+                                  Platform.isIOS
+                                      ? 'Apple Watch에서 자동 기록됩니다'
+                                      : 'Health Connect에서 자동 기록됩니다',
+                                  style: const TextStyle(
+                                    color: Colors.white54,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const Spacer(),
+                                TextButton(
+                                  onPressed: () => _showAddSleepRecord(context),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Colors.white70,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12),
+                                  ),
+                                  child: const Text('직접 기록',
+                                      style: TextStyle(fontSize: 13)),
+                                ),
+                              ],
                             ),
-                            if (!ref.watch(healthSyncProvider).syncEnabled)
+                        ] else ...[
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              ElevatedButton.icon(
+                                onPressed: () => _showAddSleepRecord(context),
+                                icon: const Icon(Icons.add, size: 18),
+                                label: const Text('수면 기록하기'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white24,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
                               ElevatedButton.icon(
                                 onPressed: () => _requestHealthSync(context),
                                 icon: const Icon(Icons.watch_rounded, size: 18),
@@ -162,34 +213,9 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                                   foregroundColor: Colors.white,
                                 ),
                               ),
-                            if (ref.watch(healthSyncProvider).syncEnabled &&
-                                ref.watch(healthSyncProvider).isSyncing)
-                              const Padding(
-                                padding: EdgeInsets.only(left: 8),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white70,
-                                      ),
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      '동기화 중...',
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
+                            ],
+                          ),
+                        ],
                       ],
                     ],
                   ),
@@ -379,11 +405,17 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
             ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddSleepRecord(context),
-        backgroundColor: AppTheme.primary,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: ref.watch(healthSyncProvider).syncEnabled
+          ? FloatingActionButton.small(
+              onPressed: () => _showAddSleepRecord(context),
+              backgroundColor: AppTheme.primary.withValues(alpha: 0.8),
+              child: const Icon(Icons.edit_rounded, size: 20),
+            )
+          : FloatingActionButton(
+              onPressed: () => _showAddSleepRecord(context),
+              backgroundColor: AppTheme.primary,
+              child: const Icon(Icons.add),
+            ),
     );
   }
 

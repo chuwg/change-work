@@ -259,9 +259,16 @@ class HealthDataService {
         session.wakeTime.day,
       );
 
-      // Skip if a record already exists for this date
+      // If a record already exists for this date, update only if it was manual
+      // (HealthKit data is more accurate than manual input)
       final existing = await db.getSleepRecordForDate(date);
-      if (existing != null) continue;
+      if (existing != null) {
+        // Already synced from health source — skip
+        if (existing.source == 'healthkit' ||
+            existing.source == 'health_connect') continue;
+        // Manual entry exists — overwrite with more accurate health data
+        await db.deleteSleepRecord(existing.id);
+      }
 
       final shift = await db.getShiftForDate(date);
       final shiftType = shift?.type;

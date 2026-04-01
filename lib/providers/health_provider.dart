@@ -5,6 +5,7 @@ import '../services/database_service.dart';
 import 'schedule_provider.dart';
 import 'sleep_provider.dart';
 import 'energy_provider.dart';
+import 'health_sync_provider.dart';
 
 class HealthState {
   final List<HealthTip> currentTips;
@@ -90,7 +91,15 @@ class HealthNotifier extends StateNotifier<HealthState> {
     // Read energy state for tip generation
     final energyState = _ref.read(energyProvider);
 
-    // Generate tips with actual shift schedule
+    // Get yesterday's sleep record
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    final yesterdaySleep =
+        await DatabaseService.instance.getSleepRecordForDate(yesterday);
+
+    // Get health sync data (steps, heart rate)
+    final healthSync = _ref.read(healthSyncProvider);
+
+    // Generate tips with actual data
     final tips = _healthService.generateTips(
       currentShiftType: shiftType,
       averageSleepHours: sleepState.averageSleepHours,
@@ -98,6 +107,11 @@ class HealthNotifier extends StateNotifier<HealthState> {
       averageEnergy: energyState.averageEnergy,
       schedule: schedule,
       userAge: userAge,
+      yesterdaySleep: yesterdaySleep,
+      recentSleep: sleepState.last7Days,
+      recentEnergy: energyState.last7Days,
+      todaySteps: healthSync.todaySteps,
+      lastHeartRate: healthSync.lastHeartRate,
     );
 
     // Calculate circadian phase with actual schedule

@@ -65,20 +65,46 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     setState(() => _sleepReminder = value);
 
     if (value) {
-      // Schedule sleep reminder for tonight at 22:00
+      // Schedule smart sleep reminders based on shift schedule
+      final schedule = ref.read(scheduleProvider);
       final now = DateTime.now();
-      var scheduledTime = DateTime(now.year, now.month, now.day, 22, 0);
-      if (scheduledTime.isBefore(now)) {
-        scheduledTime = scheduledTime.add(const Duration(days: 1));
+      final today = DateTime(now.year, now.month, now.day);
+
+      for (int i = 0; i < 7; i++) {
+        final date = today.add(Duration(days: i));
+        final tomorrow = date.add(const Duration(days: 1));
+        final tomorrowShift = schedule.getShiftForDate(tomorrow);
+        final tomorrowType = tomorrowShift?.type ?? 'off';
+
+        final bedtime =
+            await NotificationService.instance.scheduleSmartSleepReminder(
+          id: 1100 + i,
+          tomorrowShiftType: tomorrowType,
+          date: date,
+          shiftStartTime: tomorrowShift?.startTime,
+        );
+
+        if (bedtime != null) {
+          await NotificationService.instance.scheduleCaffeineCutoff(
+            id: 5000 + i,
+            bedtime: bedtime,
+          );
+        }
+
+        await NotificationService.instance.schedulePreShiftAlert(
+          id: 4000 + i,
+          tomorrowShiftType: tomorrowType,
+          today: date,
+        );
       }
-      await NotificationService.instance.scheduleSleepReminder(
-        id: 1000,
-        title: '취침 시간이에요',
-        body: '충분한 수면을 위해 잠자리에 드세요 🌙',
-        scheduledTime: scheduledTime,
-      );
     } else {
+      // Cancel all smart notification slots
       await NotificationService.instance.cancelNotification(1000);
+      for (int i = 0; i < 7; i++) {
+        await NotificationService.instance.cancelNotification(1100 + i);
+        await NotificationService.instance.cancelNotification(4000 + i);
+        await NotificationService.instance.cancelNotification(5000 + i);
+      }
     }
   }
 
@@ -385,8 +411,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 children: [
                   _buildSwitchTile(
                     icon: Icons.bedtime_rounded,
-                    title: '수면 리마인더',
-                    subtitle: '취침 시간에 맞춰 알림',
+                    title: '스마트 수면 알림',
+                    subtitle: '근무 타입에 맞춘 취침·카페인 마감 알림',
                     value: _sleepReminder,
                     onChanged: (v) => _saveSleepReminder(v),
                   ),

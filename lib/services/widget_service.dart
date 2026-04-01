@@ -82,7 +82,8 @@ class WidgetService {
   String _buildWeekShiftsJson(ScheduleState state) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final week = List.generate(7, (i) => today.add(Duration(days: i)));
+    // Store 14 days so the widget timeline (7 days) can show +7 day week strip
+    final week = List.generate(14, (i) => today.add(Duration(days: i)));
 
     final entries = week.map((date) {
       final shift = state.getShiftForDate(date);

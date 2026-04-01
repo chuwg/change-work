@@ -208,6 +208,17 @@ class DatabaseService {
     await db.delete('shifts', where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<void> updateShiftTimesForType(
+      String type, String startTime, String endTime) async {
+    final db = await database;
+    await db.update(
+      'shifts',
+      {'start_time': startTime, 'end_time': endTime},
+      where: 'type = ?',
+      whereArgs: [type],
+    );
+  }
+
   Future<void> deleteShiftsInRange(DateTime start, DateTime end) async {
     final db = await database;
     await db.delete(

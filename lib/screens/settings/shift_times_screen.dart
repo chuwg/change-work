@@ -1,17 +1,21 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/theme.dart';
+import '../../providers/schedule_provider.dart';
+import '../../services/database_service.dart';
+import '../../services/notification_service.dart';
 import '../../utils/constants.dart';
 
-class ShiftTimesScreen extends StatefulWidget {
+class ShiftTimesScreen extends ConsumerStatefulWidget {
   const ShiftTimesScreen({super.key});
 
   @override
-  State<ShiftTimesScreen> createState() => _ShiftTimesScreenState();
+  ConsumerState<ShiftTimesScreen> createState() => _ShiftTimesScreenState();
 }
 
-class _ShiftTimesScreenState extends State<ShiftTimesScreen> {
+class _ShiftTimesScreenState extends ConsumerState<ShiftTimesScreen> {
   late Map<String, Map<String, String>> _shiftTimes;
   bool _isLoading = true;
 
@@ -39,11 +43,72 @@ class _ShiftTimesScreenState extends State<ShiftTimesScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
         AppConstants.customShiftTimesKey, jsonEncode(_shiftTimes));
+
+    // Update existing shifts in DB with new times
+    final db = DatabaseService.instance;
+    for (final entry in _shiftTimes.entries) {
+      final type = entry.key;
+      final start = entry.value['start'];
+      final end = entry.value['end'];
+      if (start != null && end != null) {
+        await db.updateShiftTimesForType(type, start, end);
+      }
+    }
+
+    // Reload schedule state so in-memory shifts reflect updated times
+    final now = DateTime.now();
+    await ref
+        .read(scheduleProvider.notifier)
+        .loadShiftsForMonth(now.year, now.month);
+
+    // Reschedule shift notifications with updated times
+    await _rescheduleShiftReminder();
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('근무 시간이 저장되었습니다')),
       );
       Navigator.pop(context, true);
+    }
+  }
+
+  Future<void> _rescheduleShiftReminder() async {
+    final prefs = await SharedPreferences.getInstance();
+    final enabled = prefs.getBool(AppConstants.shiftReminderKey) ?? true;
+    final minutesBefore = prefs.getInt(AppConstants.reminderMinutesKey) ?? 60;
+
+    // Cancel all previously scheduled shift reminders (slots 0-6)
+    for (int slot = 0; slot < 7; slot++) {
+      await NotificationService.instance.cancelNotification(2000 + slot);
+    }
+
+    if (!enabled) return;
+
+    final schedule = ref.read(scheduleProvider);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    int slot = 0;
+    for (int i = 0; i <= 14 && slot < 7; i++) {
+      final date = today.add(Duration(days: i));
+      final shift = schedule.getShiftForDate(date);
+      if (shift == null ||
+          shift.type == AppConstants.shiftOff ||
+          shift.startTime == null) continue;
+
+      final parts = shift.startTime!.split(':');
+      final shiftStart = DateTime(
+        date.year, date.month, date.day,
+        int.parse(parts[0]), int.parse(parts[1]),
+      );
+
+      await NotificationService.instance.scheduleShiftReminder(
+        id: 2000 + slot,
+        shiftType: shift.type,
+        shiftStart: shiftStart,
+        minutesBefore: minutesBefore,
+      );
+      slot++;
     }
   }
 

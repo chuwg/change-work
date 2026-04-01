@@ -11,13 +11,11 @@ import '../../utils/helpers.dart';
 import '../../utils/constants.dart';
 import '../../widgets/shift_card.dart';
 import '../../widgets/health_tip_card.dart';
-import '../../widgets/sleep_summary_card.dart';
-import '../../widgets/energy_summary_card.dart';
 import '../../widgets/salary_summary_card.dart';
-import '../../widgets/circadian_mini_clock.dart';
 import '../../providers/health_sync_provider.dart';
 import '../../providers/tab_provider.dart';
 import '../../services/notification_service.dart';
+import '../../config/routes.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -49,8 +47,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       // Reschedule shift reminder with latest schedule data
       await _rescheduleShiftReminder();
+      // Reschedule smart sleep/caffeine/pre-shift notifications
+      await _rescheduleSmartNotifications();
       // Reschedule motivation notification with new random quote
       await _rescheduleMotivationNotification();
+      // Schedule weekly report notification (every Sunday 20:00)
+      await NotificationService.instance.scheduleWeeklyReport(id: 6000);
 
       // Auto-sync sleep from HealthKit/Health Connect if enabled
       // Run in background to not block UI
@@ -122,6 +124,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     } catch (_) {}
   }
 
+  Future<void> _rescheduleSmartNotifications() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final sleepEnabled = prefs.getBool(AppConstants.sleepReminderKey) ?? true;
+      if (!sleepEnabled) {
+        // Cancel all smart sleep/caffeine/pre-shift slots
+        for (int i = 0; i < 7; i++) {
+          await NotificationService.instance.cancelNotification(1100 + i);
+          await NotificationService.instance.cancelNotification(4000 + i);
+          await NotificationService.instance.cancelNotification(5000 + i);
+        }
+        return;
+      }
+
+      final schedule = ref.read(scheduleProvider);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+
+      for (int i = 0; i < 7; i++) {
+        final date = today.add(Duration(days: i));
+        final tomorrow = date.add(const Duration(days: 1));
+        final tomorrowShift = schedule.getShiftForDate(tomorrow);
+        final tomorrowType = tomorrowShift?.type ?? 'off';
+
+        // Smart sleep reminder
+        final bedtime =
+            await NotificationService.instance.scheduleSmartSleepReminder(
+          id: 1100 + i,
+          tomorrowShiftType: tomorrowType,
+          date: date,
+          shiftStartTime: tomorrowShift?.startTime,
+        );
+
+        // Caffeine cutoff (6h before bedtime)
+        if (bedtime != null) {
+          await NotificationService.instance.scheduleCaffeineCutoff(
+            id: 5000 + i,
+            bedtime: bedtime,
+          );
+        }
+
+        // Pre-shift alert (noon before night shift)
+        await NotificationService.instance.schedulePreShiftAlert(
+          id: 4000 + i,
+          tomorrowShiftType: tomorrowType,
+          today: date,
+        );
+      }
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final schedule = ref.watch(scheduleProvider);
@@ -130,6 +183,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final energy = ref.watch(energyProvider);
     final healthSync = ref.watch(healthSyncProvider);
     final todayShift = schedule.todayShift;
+    final now = DateTime.now();
+
+    // Energy: use actual or estimate from sleep
+    final hasEnergyToday = energy.todayAverageEnergy > 0;
+    final todaySleep = sleep.todayRecord;
+    final isEnergyEstimated = !hasEnergyToday && todaySleep != null;
+    final energyLevel = isEnergyEstimated
+        ? _estimateEnergy(todaySleep!.durationHours, todaySleep.quality)
+        : (energy.latestToday?.energyLevel ?? energy.todayAverageEnergy.round());
+    final hasEnergy = isEnergyEstimated || hasEnergyToday;
+
+    // Data-driven tips only (priority ≤ 1), max 2
+    final dataTips = health.currentTips
+        .where((t) => t.priority <= 1)
+        .take(2)
+        .toList();
+
+    // Show salary card only after 20th of month
+    final showSalary = now.day >= 20;
 
     return Scaffold(
       body: SafeArea(
@@ -178,63 +250,144 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-              // Quick Stats Row
+              // Compact Metrics Row (sleep | energy | rhythm)
               SliverToBoxAdapter(
                 child: Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: SleepSummaryCard(
-                          averageHours: sleep.averageSleepHours,
-                          averageQuality: sleep.averageQuality,
-                        ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceDarkElevated.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.08),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: CircadianMiniClock(
-                          phase: health.currentPhase,
-                          score: health.circadianScore,
+                    ),
+                    child: Row(
+                      children: [
+                        // Sleep
+                        Expanded(
+                          child: _buildMetricItem(
+                            icon: Icons.bedtime_rounded,
+                            color: sleep.averageSleepHours >= 7
+                                ? AppTheme.success
+                                : AppTheme.warning,
+                            label: '수면',
+                            value: sleep.averageSleepHours > 0
+                                ? '${sleep.averageSleepHours.toStringAsFixed(1)}h'
+                                : '--',
+                          ),
                         ),
-                      ),
-                    ],
+                        Container(
+                          width: 1,
+                          height: 36,
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
+                        // Energy
+                        Expanded(
+                          child: _buildMetricItem(
+                            icon: Icons.bolt_rounded,
+                            color: hasEnergy
+                                ? AppHelpers.getEnergyColor(energyLevel.clamp(1, 5))
+                                : AppTheme.textTertiary,
+                            label: isEnergyEstimated ? '에너지 추정' : '에너지',
+                            value: hasEnergy
+                                ? AppHelpers.getEnergyLabel(energyLevel.clamp(1, 5))
+                                : '--',
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          height: 36,
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
+                        // Circadian rhythm score
+                        Expanded(
+                          child: _buildMetricItem(
+                            icon: Icons.schedule_rounded,
+                            color: health.circadianScore >= 80
+                                ? AppTheme.success
+                                : health.circadianScore >= 60
+                                    ? AppTheme.warning
+                                    : AppTheme.error,
+                            label: '리듬',
+                            value: '${health.circadianScore.toInt()}점',
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
 
-              // Energy Summary Card (estimated from sleep if no manual records)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                  child: Builder(builder: (_) {
-                    final hasEnergyToday = energy.todayAverageEnergy > 0;
-                    final todaySleep = sleep.todayRecord;
-                    final isEstimated = !hasEnergyToday && todaySleep != null;
-                    final estimatedLevel = isEstimated
-                        ? _estimateEnergy(todaySleep!.durationHours, todaySleep.quality)
-                        : null;
-                    return EnergySummaryCard(
-                      averageEnergy: isEstimated
-                          ? estimatedLevel!.toDouble()
-                          : energy.todayAverageEnergy,
-                      latestLevel: isEstimated ? estimatedLevel : energy.latestToday?.energyLevel,
-                      latestTime: energy.latestToday?.timestamp,
-                      isEstimated: isEstimated,
-                    );
-                  }),
+              // Quick Energy Input (show when no energy logged today)
+              if (!hasEnergyToday)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppTheme.primary.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.bolt_rounded,
+                              color: AppTheme.primary, size: 18),
+                          const SizedBox(width: 8),
+                          const Text(
+                            '지금 에너지는?',
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const Spacer(),
+                          ...List.generate(5, (i) {
+                            final level = i + 1;
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: GestureDetector(
+                                onTap: () async {
+                                  final scheduleState = ref.read(scheduleProvider);
+                                  final shiftType = scheduleState.todayShift?.type;
+                                  await ref.read(energyProvider.notifier).addEnergyRecord(
+                                    energyLevel: level,
+                                    shiftType: shiftType,
+                                  );
+                                },
+                                child: Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: AppHelpers.getEnergyColor(level)
+                                        .withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '$level',
+                                      style: TextStyle(
+                                        color: AppHelpers.getEnergyColor(level),
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-
-              // Salary Summary Card
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                  child: SalarySummaryCard(),
-                ),
-              ),
 
               // Activity Data (when sync enabled)
               if (healthSync.syncEnabled)
@@ -242,30 +395,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 4),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _buildActivityMiniCard(
-                            icon: Icons.directions_walk_rounded,
-                            label: '걸음 수',
-                            value: healthSync.todaySteps != null
-                                ? '${_formatNumber(healthSync.todaySteps!)}걸음'
-                                : '--',
-                            color: const Color(0xFF4CAF50),
-                          ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceDarkElevated.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.08),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildActivityMiniCard(
-                            icon: Icons.favorite_rounded,
-                            label: '심박수',
-                            value: healthSync.lastHeartRate != null
-                                ? '${healthSync.lastHeartRate!.round()} BPM'
-                                : '--',
-                            color: const Color(0xFFE57373),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildMetricItem(
+                              icon: Icons.directions_walk_rounded,
+                              color: const Color(0xFF4CAF50),
+                              label: '걸음',
+                              value: healthSync.todaySteps != null
+                                  ? _formatNumber(healthSync.todaySteps!)
+                                  : '--',
+                            ),
                           ),
-                        ),
-                      ],
+                          Container(
+                            width: 1,
+                            height: 36,
+                            color: Colors.white.withValues(alpha: 0.08),
+                          ),
+                          Expanded(
+                            child: _buildMetricItem(
+                              icon: Icons.favorite_rounded,
+                              color: const Color(0xFFE57373),
+                              label: '심박수',
+                              value: healthSync.lastHeartRate != null
+                                  ? '${healthSync.lastHeartRate!.round()}'
+                                  : '--',
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -320,55 +487,114 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-              // Health Tips
+              // Weekly Report Button
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        '건강 코치',
-                        style: TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.weeklyReport),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppTheme.primary.withValues(alpha: 0.2),
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          '가이드',
-                          style: TextStyle(
-                            color: AppTheme.primary,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.assessment_rounded,
+                                color: AppTheme.primary, size: 18),
                           ),
-                        ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '주간 리포트',
+                                  style: TextStyle(
+                                    color: AppTheme.textPrimary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  '수면·에너지·근무 패턴 분석',
+                                  style: TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right_rounded,
+                              color: AppTheme.primary, size: 20),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
 
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    if (index >= health.currentTips.length) return null;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 4),
-                      child: HealthTipCard(tip: health.currentTips[index]),
-                    );
-                  },
-                  childCount: health.currentTips.length.clamp(0, 4),
+              // Salary Summary Card (only near month-end)
+              if (showSalary)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: SalarySummaryCard(),
+                  ),
                 ),
-              ),
+
+              // Data-driven Health Tips (max 2, priority ≤ 1)
+              if (dataTips.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.tips_and_updates_rounded,
+                          color: AppTheme.primary,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          '맞춤 건강 팁',
+                          style: TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              if (dataTips.isNotEmpty)
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 4),
+                        child: HealthTipCard(tip: dataTips[index]),
+                      );
+                    },
+                    childCount: dataTips.length,
+                  ),
+                ),
 
               const SliverToBoxAdapter(
                 child: SizedBox(height: 100),
@@ -380,52 +606,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildActivityMiniCard({
+  Widget _buildMetricItem({
     required IconData icon,
+    required Color color,
     required String label,
     required String value,
-    required Color color,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: AppTheme.glassCard,
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 18),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: color, size: 18),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 11,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            color: AppTheme.textSecondary,
+            fontSize: 11,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
