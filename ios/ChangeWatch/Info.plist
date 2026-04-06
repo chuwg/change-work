@@ -22,6 +22,8 @@
 	<string>1</string>
 	<key>WKApplication</key>
 	<true/>
+	<key>WKCompanionAppBundleIdentifier</key>
+	<string>com.change.app.change</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>걸음 수와 심박수 데이터를 확인하여 교대근무 건강 관리를 도와드립니다.</string>
 </dict>

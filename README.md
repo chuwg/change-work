@@ -34,6 +34,7 @@
 
 ### 2. 수면 품질 트래커
 - **HealthKit/Health Connect 자동 동기화** (Apple Watch 우선, 수동 입력 자동 대체)
+- **백그라운드 자동 동기화**: 앱을 열지 않아도 HealthKit background delivery로 수면 데이터 자동 수집
 - 취침/기상 시간 기록 (수동 입력은 백업 수단)
 - Apple Watch 수면 단계 데이터 연동 (깊은 수면, 얕은 수면, REM, 각성)
 - 5단계 수면 품질 평가 (최악~최고)
@@ -86,17 +87,26 @@
 - 세전/세후 급여 시뮬레이션
 - 월별 급여 요약 카드
 
-### 9. 홈스크린 위젯
+### 9. Apple Watch 연동
+- **컨디션 대시보드**: 수면+에너지+걸음 기반 종합 컨디션 점수 (0-100)
+- **수면 자동 분석**: Apple Watch HealthKit에서 수면 단계 직접 읽기 (깊은수면/REM/코어)
+- **에너지 원터치 기록**: Watch에서 1-5 탭으로 즉시 에너지 기록 → iPhone 앱 자동 동기화
+- **걸음 수/심박수 실시간 표시**
+- **근무 알림**: 근무 시작 10분 전, 근무 종료 시 Watch 알림
+- **HealthKit Background Delivery**: 앱을 열지 않아도 새로운 수면/활동 데이터 자동 수집
+- App Group (UserDefaults)을 통한 Watch↔iPhone 양방향 데이터 공유
+
+### 10. 홈스크린 위젯
 - iOS WidgetKit 위젯 (오늘 근무 + 주간 스케줄)
 - Android 홈스크린 위젯 (소형/중형)
 - App Group을 통한 앱↔위젯 데이터 공유
 
-### 10. 스케줄 이미지 내보내기
+### 11. 스케줄 이미지 내보내기
 - 월간 캘린더를 PNG 이미지로 생성
 - 카카오톡/SNS/메시지 등으로 공유
 - 다크 테마 기반 깔끔한 캘린더 디자인 (1080×1350)
 
-### 11. 온보딩
+### 12. 온보딩
 - 3단계 온보딩 플로우 (환영 → 패턴 선택 → 시작)
 - 교대 패턴 프리뷰 시각화
 
@@ -440,6 +450,56 @@ flutter build apk
 
 ---
 
+## 변경 이력
+
+### v1.0.7 (2026-04-06)
+
+**Apple Watch 건강 자동 동기화**
+- Watch HealthKitManager에 수면 데이터 직접 읽기 추가 (깊은수면/REM/코어 단계 분석)
+- Watch 컨디션 점수 화면 신규 (수면+에너지+걸음 기반 0-100점 게이지)
+- HealthSummaryView 전면 개편: 컨디션 스코어 + 수면 분석 + 걸음 진행바 + 심박수
+- Watch→iPhone 에너지 기록 동기화 (watch_energy_pending → Flutter DB 자동 반영)
+
+**HealthKit Background Delivery**
+- iOS AppDelegate에 HealthKit observer query + background delivery 등록
+- 수면/걸음 데이터가 새로 기록되면 앱 미실행 상태에서도 자동 수집
+- BGProcessingTask로 1시간 주기 백그라운드 동기화 스케줄링
+- Info.plist에 UIBackgroundModes (fetch, processing) 추가
+
+**버그 수정**
+- 수면 기록 취침시간 자동 보정: bedTime > wakeTime일 때 전날로 조정 (음수 수면시간 버그)
+- SleepState.copyWith sentinel 패턴 적용: todayRecord에 null 전달 가능하도록 수정
+- 컨디션 점수 계산 정상화: 가중치 합산(totalWeight) 방식으로 변경, 수면 없이 에너지만 있을 때 100점 되던 버그 수정
+
+**인프라**
+- ChangeWatchComplication bundle ID prefix 수정 (watchkitapp 하위로)
+- WKCompanionAppBundleIdentifier 추가 (Watch 앱 설치 오류 해결)
+- 버전 1.0.7로 업데이트
+
+### v1.0.6 (2026-04-05)
+
+- 홈 화면 최적화: 수면/에너지/리듬 컴팩트 메트릭 카드, 에너지 원터치 입력
+- 스마트 알림: 근무 타입별 취침 알림, 카페인 마감 알림, 야간 사전 알림
+- 주간 리포트: 수면·에너지·근무 패턴 분석 및 종합 등급 (A+~D)
+- 위젯 실시간 갱신: 7일 타임라인 엔트리 생성, 앱 실행 없이 자정 자동 반영
+- 동기부여 메시지 100개로 확장, 일별 순환 (day-of-year 기반)
+
+### v1.0.4 (2026-04-04)
+
+- 건강 코치 데이터 기반 개인화 (수면 분석, 활동량 감지, 심박수 이상 감지)
+- 컨디션 통합 대시보드 (4탭 구조)
+- 수면 HealthKit 자동 동기화 우선 정책
+- Apple Watch 수면 단계 데이터 연동
+
+### v1.0.3 (2026-04-03)
+
+- 급여계산기 음수 수당 및 월급제 계산 버그 수정
+- 이동 시간 기반 출발 알림 기능 추가
+- 근무 알림 안정성 개선
+- 교대근무자 일일 동기부여 알림 추가
+
+---
+
 ## 향후 계획
 
 - [x] ~~Apple HealthKit 연동 (자동 수면 데이터 수집)~~ ✅ 완료
@@ -455,7 +515,11 @@ flutter build apk
 - [x] ~~근무 타입 연동 스마트 알림 (수면/카페인 컷오프)~~ ✅ 완료
 - [x] ~~주간 리포트~~ ✅ 완료
 - [x] ~~에너지 기록 간소화 (홈 퀵 입력)~~ ✅ 완료
-- [ ] Apple Watch 컴패니언 앱 (개발 완료, 배포 준비 중)
+- [x] ~~Apple Watch 자동 건강 동기화 (수면/에너지/걸음/심박 자동 수집)~~ ✅ 완료
+- [x] ~~Watch 컨디션 점수 표시 (수면+에너지+활동 기반)~~ ✅ 완료
+- [x] ~~HealthKit Background Delivery (백그라운드 자동 동기화)~~ ✅ 완료
+- [x] ~~Watch→iPhone 에너지 기록 동기화~~ ✅ 완료
+- [ ] Apple Watch 컴패니언 앱 배포 (개발 완료, 배포 준비 중)
 - [ ] 월간 리포트 (월간 추이 분석, PDF 내보내기)
 - [ ] 클라우드 백업 (Firebase/Supabase)
 - [ ] 근무 교환 마켓플레이스 (동료 간 근무일 교환)

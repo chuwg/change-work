@@ -21,17 +21,21 @@ class SleepState {
 
   SleepState copyWith({
     List<SleepRecord>? records,
-    SleepRecord? todayRecord,
+    Object? todayRecord = _sentinel,
     Map<String, double>? avgByShiftType,
     bool? isLoading,
   }) {
     return SleepState(
       records: records ?? this.records,
-      todayRecord: todayRecord ?? this.todayRecord,
+      todayRecord: todayRecord == _sentinel
+          ? this.todayRecord
+          : todayRecord as SleepRecord?,
       avgByShiftType: avgByShiftType ?? this.avgByShiftType,
       isLoading: isLoading ?? this.isLoading,
     );
   }
+
+  static const _sentinel = Object();
 
   double get averageSleepHours {
     if (records.isEmpty) return 0;

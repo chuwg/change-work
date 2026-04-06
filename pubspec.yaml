@@ -1,7 +1,7 @@
 name: change
 description: 스마트 교대근무 스케줄 관리 & 건강코치 앱
 publish_to: 'none'
-version: 1.0.6+1
+version: 1.0.7+1
 
 environment:
   sdk: '>=3.2.0 <4.0.0'

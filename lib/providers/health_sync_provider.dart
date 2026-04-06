@@ -3,7 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_profile.dart';
 import '../services/health_data_service.dart';
 import '../services/database_service.dart';
+import '../services/widget_service.dart';
 import '../providers/sleep_provider.dart';
+import '../providers/energy_provider.dart';
 import '../utils/constants.dart';
 
 class HealthSyncState {
@@ -125,6 +127,9 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
       // Sync weight/height to user profile if available
       await _syncBodyMeasurements();
 
+      // Import pending energy records from Apple Watch
+      await _importWatchEnergyRecords();
+
       // Save last sync time
       final syncTime = DateTime.now();
       final prefs = await SharedPreferences.getInstance();
@@ -177,9 +182,39 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
     }
   }
 
+  /// Import energy records written by Apple Watch app.
+  Future<void> _importWatchEnergyRecords() async {
+    try {
+      final records = await WidgetService.instance.readWatchEnergyRecords();
+      if (records.isEmpty) return;
+
+      for (final record in records) {
+        final level = record['energy_level'] as int?;
+        final timestampStr = record['timestamp'] as String?;
+        if (level == null || timestampStr == null) continue;
+
+        final timestamp = DateTime.tryParse(timestampStr);
+        if (timestamp == null) continue;
+
+        await ref.read(energyProvider.notifier).addEnergyRecord(
+              energyLevel: level,
+              source: 'watch',
+            );
+      }
+
+      // Clear pending records after import
+      await WidgetService.instance.clearWatchEnergyRecords();
+    } catch (_) {}
+  }
+
   /// Auto sync on app start (when sync is enabled).
+  /// Also picks up any data synced by iOS background delivery.
   Future<void> autoSync() async {
     if (!state.syncEnabled) return;
+
+    // Always import Watch energy records even if full sync isn't needed
+    await _importWatchEnergyRecords();
+
     await syncNow();
   }
 }

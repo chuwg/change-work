@@ -819,14 +819,14 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
     EnergyState energy,
     HealthSyncState healthSync,
   ) {
-    double score = 50;
-    int factors = 0;
+    double score = 0;
+    double totalWeight = 0;
 
     // Sleep factor (40% weight)
+    double? sleepScore;
     if (sleep.todayRecord != null) {
       final hours = sleep.todayRecord!.durationHours;
       final quality = sleep.todayRecord!.quality;
-      double sleepScore;
       if (hours >= 7 && hours <= 9) {
         sleepScore = 90;
       } else if (hours >= 6) {
@@ -836,20 +836,20 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
       } else {
         sleepScore = 30;
       }
-      sleepScore += (quality - 3) * 5;
-      score = sleepScore * 0.4;
-      factors++;
+      sleepScore = (sleepScore + (quality - 3) * 5).clamp(0, 100);
     } else if (sleep.averageSleepHours > 0) {
-      final avgScore = sleep.averageSleepHours >= 7 ? 75.0 : 50.0;
-      score = avgScore * 0.4;
-      factors++;
+      sleepScore = sleep.averageSleepHours >= 7 ? 75.0 : 50.0;
+    }
+    if (sleepScore != null) {
+      score += sleepScore * 0.4;
+      totalWeight += 0.4;
     }
 
     // Energy factor (35% weight)
     if (energy.todayAverageEnergy > 0) {
       final energyScore = (energy.todayAverageEnergy / 5) * 100;
       score += energyScore * 0.35;
-      factors++;
+      totalWeight += 0.35;
     }
 
     // Activity factor (25% weight)
@@ -866,16 +866,12 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
         activityScore = 30;
       }
       score += activityScore * 0.25;
-      factors++;
+      totalWeight += 0.25;
     }
 
-    if (factors == 0) return 50;
-    // Normalize if not all factors are present
-    if (factors < 3) {
-      score = score / (factors == 1 ? 0.4 : factors == 2 ? 0.75 : 1.0);
-    }
-
-    return score.round().clamp(0, 100);
+    if (totalWeight == 0) return 50;
+    // Normalize by actual weight sum to get proper 0-100 scale
+    return (score / totalWeight).round().clamp(0, 100);
   }
 
   String _formatSteps(int steps) {

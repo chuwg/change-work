@@ -659,9 +659,16 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                       onPressed: () {
                         final schedule = ref.read(scheduleProvider);
                         final todayShift = schedule.todayShift;
+                        // If bedTime is after wakeTime, move bedTime to previous day
+                        var adjustedBedTime = bedTime;
+                        if (bedTime.isAfter(wakeTime) ||
+                            bedTime.isAtSameMomentAs(wakeTime)) {
+                          adjustedBedTime =
+                              bedTime.subtract(const Duration(days: 1));
+                        }
                         ref.read(sleepProvider.notifier).addSleepRecord(
                               date: DateTime.now(),
-                              bedTime: bedTime,
+                              bedTime: adjustedBedTime,
                               wakeTime: wakeTime,
                               quality: quality,
                               shiftType: todayShift?.type,
