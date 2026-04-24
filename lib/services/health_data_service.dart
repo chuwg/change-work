@@ -259,14 +259,18 @@ class HealthDataService {
         session.wakeTime.day,
       );
 
-      // If a record already exists for this date, update only if it was manual
-      // (HealthKit data is more accurate than manual input)
+      // If a record already exists for this date, keep the longer session
+      // (main night sleep should win over naps; also handles partial→complete updates)
       final existing = await db.getSleepRecordForDate(date);
       if (existing != null) {
-        // Already synced from health source — skip
         if (existing.source == 'healthkit' ||
-            existing.source == 'health_connect') continue;
-        // Manual entry exists — overwrite with more accurate health data
+            existing.source == 'health_connect') {
+          final existingMin =
+              existing.wakeTime.difference(existing.bedTime).inMinutes;
+          final newMin =
+              session.wakeTime.difference(session.bedTime).inMinutes;
+          if (newMin <= existingMin) continue;
+        }
         await db.deleteSleepRecord(existing.id);
       }
 
