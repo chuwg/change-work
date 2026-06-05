@@ -10,6 +10,7 @@ import '../../providers/sleep_provider.dart';
 import '../../models/user_profile.dart';
 import '../../services/database_service.dart';
 import '../../services/notification_service.dart';
+import '../../services/notification_scheduler.dart';
 import '../../utils/constants.dart';
 import '../../config/routes.dart';
 import 'profile_edit_screen.dart';
@@ -63,87 +64,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(AppConstants.sleepReminderKey, value);
     setState(() => _sleepReminder = value);
-
-    if (value) {
-      // Schedule smart sleep reminders based on shift schedule
-      final schedule = ref.read(scheduleProvider);
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-
-      for (int i = 0; i < 7; i++) {
-        final date = today.add(Duration(days: i));
-        final tomorrow = date.add(const Duration(days: 1));
-        final tomorrowShift = schedule.getShiftForDate(tomorrow);
-        final tomorrowType = tomorrowShift?.type ?? 'off';
-
-        final bedtime =
-            await NotificationService.instance.scheduleSmartSleepReminder(
-          id: 1100 + i,
-          tomorrowShiftType: tomorrowType,
-          date: date,
-          shiftStartTime: tomorrowShift?.startTime,
-        );
-
-        if (bedtime != null) {
-          await NotificationService.instance.scheduleCaffeineCutoff(
-            id: 5000 + i,
-            bedtime: bedtime,
-          );
-        }
-
-        await NotificationService.instance.schedulePreShiftAlert(
-          id: 4000 + i,
-          tomorrowShiftType: tomorrowType,
-          today: date,
-        );
-      }
-    } else {
-      // Cancel all smart notification slots
-      await NotificationService.instance.cancelNotification(1000);
-      for (int i = 0; i < 7; i++) {
-        await NotificationService.instance.cancelNotification(1100 + i);
-        await NotificationService.instance.cancelNotification(4000 + i);
-        await NotificationService.instance.cancelNotification(5000 + i);
-      }
-    }
+    // Single source of truth: cancels stale slots then reschedules per prefs.
+    await NotificationScheduler.rescheduleForSchedule(ref.read(scheduleProvider));
   }
 
   Future<void> _saveShiftReminder(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(AppConstants.shiftReminderKey, value);
     setState(() => _shiftReminder = value);
-
-    // Cancel all previously scheduled shift reminders (slots 0-6)
-    for (int slot = 0; slot < 7; slot++) {
-      await NotificationService.instance.cancelNotification(2000 + slot);
-    }
-
-    if (!value) return;
-
-    // Schedule up to 7 upcoming shifts in advance
-    final schedule = ref.read(scheduleProvider);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    int slot = 0;
-    for (int i = 0; i <= 14 && slot < 7; i++) {
-      final date = today.add(Duration(days: i));
-      final shift = schedule.getShiftForDate(date);
-      if (shift == null ||
-          shift.type == AppConstants.shiftOff ||
-          shift.startTime == null) continue;
-      final parts = shift.startTime!.split(':');
-      final shiftStart = DateTime(
-        date.year, date.month, date.day,
-        int.parse(parts[0]), int.parse(parts[1]),
-      );
-      await NotificationService.instance.scheduleShiftReminder(
-        id: 2000 + slot,
-        shiftType: shift.type,
-        shiftStart: shiftStart,
-        minutesBefore: _reminderMinutes,
-      );
-      slot++;
-    }
+    await NotificationScheduler.rescheduleForSchedule(ref.read(scheduleProvider));
   }
 
   Future<void> _pickCommuteMinutes() async {

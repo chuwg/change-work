@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/theme.dart';
 import '../../providers/schedule_provider.dart';
 import '../../services/database_service.dart';
-import '../../services/notification_service.dart';
+import '../../services/notification_scheduler.dart';
 import '../../utils/constants.dart';
 
 class ShiftTimesScreen extends ConsumerStatefulWidget {
@@ -61,54 +61,15 @@ class _ShiftTimesScreenState extends ConsumerState<ShiftTimesScreen> {
         .read(scheduleProvider.notifier)
         .loadShiftsForMonth(now.year, now.month);
 
-    // Reschedule shift notifications with updated times
-    await _rescheduleShiftReminder();
+    // Reschedule all schedule-dependent notifications with the updated times
+    // (shift reminders + smart sleep, which depend on shift start times).
+    await NotificationScheduler.rescheduleForSchedule(ref.read(scheduleProvider));
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('근무 시간이 저장되었습니다')),
       );
       Navigator.pop(context, true);
-    }
-  }
-
-  Future<void> _rescheduleShiftReminder() async {
-    final prefs = await SharedPreferences.getInstance();
-    final enabled = prefs.getBool(AppConstants.shiftReminderKey) ?? true;
-    final minutesBefore = prefs.getInt(AppConstants.reminderMinutesKey) ?? 60;
-
-    // Cancel all previously scheduled shift reminders (slots 0-6)
-    for (int slot = 0; slot < 7; slot++) {
-      await NotificationService.instance.cancelNotification(2000 + slot);
-    }
-
-    if (!enabled) return;
-
-    final schedule = ref.read(scheduleProvider);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    int slot = 0;
-    for (int i = 0; i <= 14 && slot < 7; i++) {
-      final date = today.add(Duration(days: i));
-      final shift = schedule.getShiftForDate(date);
-      if (shift == null ||
-          shift.type == AppConstants.shiftOff ||
-          shift.startTime == null) continue;
-
-      final parts = shift.startTime!.split(':');
-      final shiftStart = DateTime(
-        date.year, date.month, date.day,
-        int.parse(parts[0]), int.parse(parts[1]),
-      );
-
-      await NotificationService.instance.scheduleShiftReminder(
-        id: 2000 + slot,
-        shiftType: shift.type,
-        shiftStart: shiftStart,
-        minutesBefore: minutesBefore,
-      );
-      slot++;
     }
   }
 

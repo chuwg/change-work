@@ -11,10 +11,20 @@ class HealthDataService {
 
   final Health _health = Health();
   bool _isAuthorized = false;
+  bool _configured = false;
 
   static const _authCacheKey = 'health_auth_granted';
 
   bool get isAuthorized => _isAuthorized;
+
+  /// The health plugin (v10+) MUST be configured once before any call.
+  /// Without this, iOS HealthKit silently returns no data and authorization
+  /// requests don't surface — which looks like "sync on, 0 records".
+  Future<void> _ensureConfigured() async {
+    if (_configured) return;
+    await _health.configure();
+    _configured = true;
+  }
 
   static const _sleepTypes = [
     HealthDataType.SLEEP_ASLEEP,
@@ -42,6 +52,7 @@ class HealthDataService {
   /// Request authorization to read health data.
   Future<bool> requestAuthorization() async {
     try {
+      await _ensureConfigured();
       final permissions = _allTypes.map((_) => HealthDataAccess.READ).toList();
       _isAuthorized = await _health.requestAuthorization(
         _allTypes,
@@ -65,6 +76,7 @@ class HealthDataService {
   Future<bool> hasAuthorization() async {
     if (_isAuthorized) return true;
     try {
+      await _ensureConfigured();
       // Check persisted cache first
       final prefs = await SharedPreferences.getInstance();
       final cached = prefs.getBool(_authCacheKey) ?? false;

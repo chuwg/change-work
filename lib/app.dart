@@ -9,8 +9,10 @@ import 'screens/condition/condition_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'services/widget_service.dart';
+import 'services/notification_scheduler.dart';
 import 'providers/schedule_provider.dart';
 import 'providers/energy_provider.dart';
+import 'providers/health_sync_provider.dart';
 import 'providers/tab_provider.dart';
 
 class ChangeApp extends ConsumerWidget {
@@ -126,6 +128,11 @@ class _MainShellState extends ConsumerState<MainShell>
     if (state == AppLifecycleState.resumed) {
       final schedule = ref.read(scheduleProvider);
       WidgetService.instance.updateWidgetData(schedule);
+      // Reschedule notifications: "today" may have rolled over while the app
+      // was backgrounded, so slot→date mappings must be refreshed.
+      NotificationScheduler.rescheduleForSchedule(schedule);
+      // Pick up any sleep/health data recorded while the app was away.
+      ref.read(healthSyncProvider.notifier).autoSync();
       _importWatchEnergyRecords();
     }
   }

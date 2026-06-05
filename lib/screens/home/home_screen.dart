@@ -15,6 +15,7 @@ import '../../widgets/salary_summary_card.dart';
 import '../../providers/health_sync_provider.dart';
 import '../../providers/tab_provider.dart';
 import '../../services/notification_service.dart';
+import '../../services/notification_scheduler.dart';
 import '../../config/routes.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -45,10 +46,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           .read(salaryProvider.notifier)
           .calculateForMonth(now.year, now.month);
 
-      // Reschedule shift reminder with latest schedule data
-      await _rescheduleShiftReminder();
-      // Reschedule smart sleep/caffeine/pre-shift notifications
-      await _rescheduleSmartNotifications();
+      // Reschedule all schedule-dependent notifications (shift reminders +
+      // smart sleep/caffeine/pre-shift), always cancelling stale slots first.
+      await NotificationScheduler.rescheduleForSchedule(
+          ref.read(scheduleProvider));
       // Reschedule motivation notification with new random quote
       await _rescheduleMotivationNotification();
       // Schedule weekly report notification (every Sunday 20:00)
@@ -77,101 +78,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         hour: hour,
         minute: minute,
       );
-    } catch (_) {}
-  }
-
-  Future<void> _rescheduleShiftReminder() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final enabled = prefs.getBool(AppConstants.shiftReminderKey) ?? true;
-      final minutesBefore =
-          prefs.getInt(AppConstants.reminderMinutesKey) ?? 60;
-      final schedule = ref.read(scheduleProvider);
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-
-      // Cancel all previously scheduled shift reminders (slots 0-6)
-      for (int slot = 0; slot < 7; slot++) {
-        await NotificationService.instance.cancelNotification(2000 + slot);
-      }
-
-      if (!enabled) return;
-
-      // Schedule up to 7 upcoming shifts in advance
-      int slot = 0;
-      for (int i = 0; i <= 14 && slot < 7; i++) {
-        final date = today.add(Duration(days: i));
-        final shift = schedule.getShiftForDate(date);
-        if (shift == null ||
-            shift.type == AppConstants.shiftOff ||
-            shift.startTime == null) continue;
-
-        final parts = shift.startTime!.split(':');
-        final shiftStart = DateTime(
-          date.year, date.month, date.day,
-          int.parse(parts[0]), int.parse(parts[1]),
-        );
-
-        // scheduleShiftReminder internally skips if reminder time is past
-        await NotificationService.instance.scheduleShiftReminder(
-          id: 2000 + slot,
-          shiftType: shift.type,
-          shiftStart: shiftStart,
-          minutesBefore: minutesBefore,
-        );
-        slot++;
-      }
-    } catch (_) {}
-  }
-
-  Future<void> _rescheduleSmartNotifications() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final sleepEnabled = prefs.getBool(AppConstants.sleepReminderKey) ?? true;
-      if (!sleepEnabled) {
-        // Cancel all smart sleep/caffeine/pre-shift slots
-        for (int i = 0; i < 7; i++) {
-          await NotificationService.instance.cancelNotification(1100 + i);
-          await NotificationService.instance.cancelNotification(4000 + i);
-          await NotificationService.instance.cancelNotification(5000 + i);
-        }
-        return;
-      }
-
-      final schedule = ref.read(scheduleProvider);
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-
-      for (int i = 0; i < 7; i++) {
-        final date = today.add(Duration(days: i));
-        final tomorrow = date.add(const Duration(days: 1));
-        final tomorrowShift = schedule.getShiftForDate(tomorrow);
-        final tomorrowType = tomorrowShift?.type ?? 'off';
-
-        // Smart sleep reminder
-        final bedtime =
-            await NotificationService.instance.scheduleSmartSleepReminder(
-          id: 1100 + i,
-          tomorrowShiftType: tomorrowType,
-          date: date,
-          shiftStartTime: tomorrowShift?.startTime,
-        );
-
-        // Caffeine cutoff (6h before bedtime)
-        if (bedtime != null) {
-          await NotificationService.instance.scheduleCaffeineCutoff(
-            id: 5000 + i,
-            bedtime: bedtime,
-          );
-        }
-
-        // Pre-shift alert (noon before night shift)
-        await NotificationService.instance.schedulePreShiftAlert(
-          id: 4000 + i,
-          tomorrowShiftType: tomorrowType,
-          today: date,
-        );
-      }
     } catch (_) {}
   }
 

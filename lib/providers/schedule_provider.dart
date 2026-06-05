@@ -6,6 +6,7 @@ import '../models/shift.dart';
 import '../models/shift_pattern.dart';
 import '../services/database_service.dart';
 import '../services/widget_service.dart';
+import '../services/notification_scheduler.dart';
 import '../utils/constants.dart';
 
 const _uuid = Uuid();
@@ -135,6 +136,7 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
     shiftMap[dateKey] = shift;
     state = state.copyWith(shifts: shiftMap);
     WidgetService.instance.updateWidgetData(state);
+    await NotificationScheduler.rescheduleForSchedule(state);
   }
 
   Future<void> applyPattern(
@@ -193,6 +195,7 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
 
     await _db.setSetting('active_pattern_id', pattern.id);
     await _db.setSetting('pattern_start_date', startDate.toIso8601String());
+    await NotificationScheduler.rescheduleForSchedule(state);
   }
 
   Future<void> removeShift(DateTime date) async {
@@ -204,6 +207,7 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
       shiftMap.remove(dateKey);
       state = state.copyWith(shifts: shiftMap);
       WidgetService.instance.updateWidgetData(state);
+      await NotificationScheduler.rescheduleForSchedule(state);
     }
   }
 }
