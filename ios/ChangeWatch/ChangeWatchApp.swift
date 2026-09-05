@@ -14,9 +14,11 @@ struct ChangeWatchApp: App {
 
 class AppDelegate: NSObject, WKApplicationDelegate {
     func applicationDidFinishLaunching() {
-        UNUserNotificationCenter.current().requestAuthorization(
-            options: [.alert, .sound, .badge]
-        ) { _, _ in }
+        if !ScreenshotMode.isActive {
+            UNUserNotificationCenter.current().requestAuthorization(
+                options: [.alert, .sound, .badge]
+            ) { _, _ in }
+        }
         scheduleShiftNotifications()
     }
 
@@ -24,10 +26,18 @@ class AppDelegate: NSObject, WKApplicationDelegate {
         scheduleShiftNotifications()
     }
 
+    /// Schedules only the shift *end* notification.
+    ///
+    /// The start reminder deliberately lives on the phone: it honours the
+    /// user's configured commute time ("지금 출발하세요!") and iOS forwards it
+    /// to the watch when the phone is not in use. The watch used to schedule
+    /// its own hardcoded 10-minute warning on top of that, which meant two
+    /// different alerts for one shift.
     private func scheduleShiftNotifications() {
         let center = UNUserNotificationCenter.current()
         center.removeAllPendingNotificationRequests()
 
+        // Resolved by date, so a day rollover cannot leave yesterday's shift here.
         let start = WidgetDataReader.readTodayStart()
         let end = WidgetDataReader.readTodayEnd()
         let label = WidgetDataReader.readTodayLabel()
@@ -35,50 +45,29 @@ class AppDelegate: NSObject, WKApplicationDelegate {
 
         guard type != .off && type != .none else { return }
 
-        // Shift start notification (10 min before)
-        if let startDate = parseTimeToday(start) {
-            let triggerDate = startDate.addingTimeInterval(-10 * 60)
-            if triggerDate > Date() {
-                let content = UNMutableNotificationContent()
-                content.title = "근무 시작 알림"
-                content.body = "\(label) 근무가 10분 후 시작됩니다 (\(start))"
-                content.sound = .default
-
-                let comps = Calendar.current.dateComponents(
-                    [.hour, .minute], from: triggerDate
-                )
-                let trigger = UNCalendarNotificationTrigger(
-                    dateMatching: comps, repeats: false
-                )
-                center.add(UNNotificationRequest(
-                    identifier: "shift_start", content: content, trigger: trigger
-                ))
-            }
+        guard var endDate = parseTimeToday(end) else { return }
+        // A night shift ends the next morning.
+        if let startDate = parseTimeToday(start), endDate <= startDate {
+            endDate = Calendar.current.date(byAdding: .day, value: 1, to: endDate)!
         }
+        guard endDate > Date() else { return }
 
-        // Shift end notification
-        if let endDate = parseTimeToday(end) {
-            var adjustedEnd = endDate
-            if let startDate = parseTimeToday(start), endDate <= startDate {
-                adjustedEnd = Calendar.current.date(byAdding: .day, value: 1, to: endDate)!
-            }
-            if adjustedEnd > Date() {
-                let content = UNMutableNotificationContent()
-                content.title = "근무 종료"
-                content.body = "\(label) 근무가 종료되었습니다. 수고하셨습니다!"
-                content.sound = .default
+        let content = UNMutableNotificationContent()
+        content.title = "근무 종료"
+        content.body = "\(label) 근무가 종료되었습니다. 수고하셨습니다!"
+        content.sound = .default
 
-                let comps = Calendar.current.dateComponents(
-                    [.hour, .minute], from: adjustedEnd
-                )
-                let trigger = UNCalendarNotificationTrigger(
-                    dateMatching: comps, repeats: false
-                )
-                center.add(UNNotificationRequest(
-                    identifier: "shift_end", content: content, trigger: trigger
-                ))
-            }
-        }
+        // Full date components: hour/minute alone is not bound to a day, so an
+        // overnight shift's end could match the wrong occurrence.
+        let comps = Calendar.current.dateComponents(
+            [.year, .month, .day, .hour, .minute], from: endDate
+        )
+        let trigger = UNCalendarNotificationTrigger(
+            dateMatching: comps, repeats: false
+        )
+        center.add(UNNotificationRequest(
+            identifier: "shift_end", content: content, trigger: trigger
+        ))
     }
 
     private func parseTimeToday(_ timeStr: String) -> Date? {

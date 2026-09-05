@@ -1,7 +1,7 @@
 name: change
 description: 스마트 교대근무 스케줄 관리 & 건강코치 앱
 publish_to: 'none'
-version: 1.0.9+3
+version: 1.0.10+4
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -59,6 +59,7 @@ dev_dependencies:
   build_runner: ^2.4.8
   flutter_launcher_icons: ^0.14.3
   image: ^4.7.2
+  sqflite_common_ffi: ^2.4.0+3
 
 flutter_launcher_icons:
   android: true

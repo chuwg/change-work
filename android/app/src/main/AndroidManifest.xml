@@ -2,6 +2,12 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Re-arm scheduled shift/sleep notifications after a reboot or app update;
+         without this every pending alarm is dropped until the app is opened. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Commute reminders are time-critical. Not granted by default on Android
+         14+, so NotificationService falls back to inexact alarms when denied. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <!-- Health Connect permissions -->
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
@@ -72,6 +78,21 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/shift_widget_medium_info" />
+        </receiver>
+
+        <!-- flutter_local_notifications: delivery + reboot re-scheduling -->
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
         </receiver>
 
         <!-- Don't delete the meta-data below.

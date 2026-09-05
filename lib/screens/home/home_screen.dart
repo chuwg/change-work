@@ -38,6 +38,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       await ref
           .read(scheduleProvider.notifier)
           .loadShiftsForMonth(now.year, now.month);
+      // Also load next month: "다음 근무"/"다음 휴무" and the notification
+      // lookahead both scan past today, and near month-end everything they
+      // need lives in the following month.
+      final nextMonth = DateTime(now.year, now.month + 1);
+      await ref
+          .read(scheduleProvider.notifier)
+          .loadShiftsForMonth(nextMonth.year, nextMonth.month);
       await ref.read(sleepProvider.notifier).loadRecords();
       await ref.read(energyProvider.notifier).loadRecords();
       await ref.read(healthProvider.notifier).refreshHealthData();

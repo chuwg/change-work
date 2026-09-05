@@ -14,6 +14,7 @@ import '../../services/notification_scheduler.dart';
 import '../../utils/constants.dart';
 import '../../config/routes.dart';
 import 'profile_edit_screen.dart';
+import 'notification_status_screen.dart';
 import 'shift_times_screen.dart';
 import '../../services/export_service.dart';
 
@@ -338,6 +339,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               decoration: AppTheme.glassCard,
               child: Column(
                 children: [
+                  _buildActionTile(
+                    icon: Icons.notifications_active_rounded,
+                    title: '알림 상태 확인',
+                    subtitle: '권한·예정된 알림 확인, 테스트 발송',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const NotificationStatusScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1, indent: 56),
                   _buildSwitchTile(
                     icon: Icons.bedtime_rounded,
                     title: '스마트 수면 알림',
@@ -895,6 +910,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Navigator.pop(context);
               await DatabaseService.instance.deleteAllData();
               ref.read(sleepProvider.notifier).loadRecords();
+              // Wipe every cached month, not just the current one, so no
+              // deleted shift survives in memory and gets rescheduled.
+              await ref.read(scheduleProvider.notifier).clearAll();
               final now = DateTime.now();
               ref.read(scheduleProvider.notifier).loadShiftsForMonth(now.year, now.month);
               if (mounted) {

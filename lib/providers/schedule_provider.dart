@@ -111,6 +111,13 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
     state = state.copyWith(isLoading: true);
     final shifts = await _db.getShiftsForMonth(year, month);
     final shiftMap = Map<DateTime, Shift>.from(state.shifts);
+    // Drop this month's cached days first: merging blindly kept shifts that no
+    // longer exist in the DB (deleted / reset days) alive in memory, and those
+    // ghosts fed straight back into the notification scheduler.
+    final monthStart = DateTime(year, month, 1);
+    final monthEnd = DateTime(year, month + 1, 0);
+    shiftMap.removeWhere((key, _) =>
+        !key.isBefore(monthStart) && !key.isAfter(monthEnd));
     for (final shift in shifts) {
       final key = DateTime(shift.date.year, shift.date.month, shift.date.day);
       shiftMap[key] = shift;
@@ -122,8 +129,11 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
   Future<void> addShift(DateTime date, String type, {String? note}) async {
     final dateKey = DateTime(date.year, date.month, date.day);
     final times = await getShiftTimes(type);
+    // Editing a day must overwrite that day's shift, not add another one:
+    // reuse the existing row's id so the write replaces it in place.
+    final existing = state.shifts[dateKey];
     final shift = Shift(
-      id: _uuid.v4(),
+      id: existing?.id ?? _uuid.v4(),
       date: dateKey,
       type: type,
       startTime: times?['start'],
@@ -195,6 +205,14 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
 
     await _db.setSetting('active_pattern_id', pattern.id);
     await _db.setSetting('pattern_start_date', startDate.toIso8601String());
+    await NotificationScheduler.rescheduleForSchedule(state);
+  }
+
+  /// Wipe every cached shift (used after a full data reset) and drop the
+  /// notifications that were scheduled from them.
+  Future<void> clearAll() async {
+    state = state.copyWith(shifts: {});
+    WidgetService.instance.updateWidgetData(state);
     await NotificationScheduler.rescheduleForSchedule(state);
   }
 

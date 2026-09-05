@@ -4,7 +4,7 @@ class AppConstants {
   static const String appName = 'Change';
   static const String appVersion = '1.0.0';
   static const String dbName = 'change.db';
-  static const int dbVersion = 4;
+  static const int dbVersion = 5;
 
   // Shift Types
   static const String shiftDay = 'day';

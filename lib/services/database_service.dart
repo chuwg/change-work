@@ -101,8 +101,11 @@ class DatabaseService {
       )
     ''');
 
+    // UNIQUE: one shift per date. Combined with ConflictAlgorithm.replace this
+    // makes re-inserting a date overwrite the existing shift instead of adding
+    // a second row (which used to leave the old shift alive in the DB).
     await db.execute(
-      'CREATE INDEX idx_shifts_date ON shifts(date)',
+      'CREATE UNIQUE INDEX idx_shifts_date ON shifts(date)',
     );
     await db.execute(
       'CREATE INDEX idx_sleep_date ON sleep_records(date)',
@@ -153,6 +156,20 @@ class DatabaseService {
         'CREATE INDEX IF NOT EXISTS idx_energy_timestamp ON energy_records(timestamp)',
       );
     }
+    if (oldVersion < 5) {
+      // Shifts used to be keyed only by uuid, so editing a day inserted a
+      // *second* row for the same date and the old shift kept being read back
+      // (stale schedule -> stale notifications). Drop the leftovers, keeping
+      // the most recently inserted row per date, then enforce one-per-date.
+      await db.execute('''
+        DELETE FROM shifts
+        WHERE rowid NOT IN (SELECT MAX(rowid) FROM shifts GROUP BY date)
+      ''');
+      await db.execute('DROP INDEX IF EXISTS idx_shifts_date');
+      await db.execute(
+        'CREATE UNIQUE INDEX idx_shifts_date ON shifts(date)',
+      );
+    }
   }
 
   // === Shifts ===
@@ -182,7 +199,7 @@ class DatabaseService {
       'shifts',
       where: 'date BETWEEN ? AND ?',
       whereArgs: [startDate, endDate],
-      orderBy: 'date ASC',
+      orderBy: 'date ASC, created_at ASC',
     );
 
     return maps.map((m) => Shift.fromMap(m)).toList();
@@ -196,6 +213,7 @@ class DatabaseService {
       'shifts',
       where: 'date = ?',
       whereArgs: [dateStr],
+      orderBy: 'created_at DESC',
       limit: 1,
     );
 

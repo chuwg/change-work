@@ -1,6 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/shift.dart';
 import '../providers/schedule_provider.dart';
 import '../utils/constants.dart';
+import 'database_service.dart';
+import 'notification_plan.dart';
 import 'notification_service.dart';
 
 /// Centralized rescheduling of all schedule-dependent notifications.
@@ -9,89 +12,77 @@ import 'notification_service.dart';
 /// pattern) or "today" rolls over, otherwise notifications scheduled for an
 /// old schedule keep firing — producing duplicate/stale alarms.
 ///
-/// It always cancels the relevant notification ID ranges first, so a slot that
-/// no longer maps to a shift can never linger in the OS.
+/// It always cancels every id the planner owns first, so a slot that no longer
+/// maps to a shift can never linger in the OS.
+///
+/// What gets scheduled is decided by [NotificationPlanner], which is pure and
+/// unit-tested; this class only resolves the schedule and talks to the OS.
 class NotificationScheduler {
-  // ID ranges (kept in sync with NotificationService usage):
-  //   2000-2006 : one-time shift start reminders (ordinal slots)
-  //   1100-1106 : smart sleep reminders (day offset 0-6)
-  //   5000-5006 : caffeine cutoff (day offset 0-6)
-  //   4000-4006 : pre-shift nap alert (day offset 0-6)
-  static const int _slots = 7;
+  /// Resolve the shifts for [today .. today + lookaheadDays].
+  ///
+  /// [schedule] is the source of truth (it is always written before this runs),
+  /// but its map only holds the months the UI has loaded — so a day past the
+  /// month boundary would silently look like "no shift". Fill those gaps from
+  /// the DB, which every mutation writes to before rescheduling.
+  static Future<Map<DateTime, Shift?>> _resolveWindow(
+    ScheduleState schedule,
+    DateTime today,
+  ) async {
+    final window = <DateTime, Shift?>{};
+    final missing = <DateTime>[];
 
-  static Future<void> rescheduleForSchedule(ScheduleState schedule) async {
+    for (int i = 0; i <= NotificationPlanner.lookaheadDays; i++) {
+      final date = today.add(Duration(days: i));
+      final key = DateTime(date.year, date.month, date.day);
+      final shift = schedule.getShiftForDate(key);
+      window[key] = shift;
+      if (shift == null) missing.add(key);
+    }
+
+    if (missing.isNotEmpty) {
+      try {
+        for (final key in missing) {
+          window[key] = await DatabaseService.instance.getShiftForDate(key);
+        }
+      } catch (_) {
+        // No DB (e.g. web): the in-memory schedule is all we have.
+      }
+    }
+
+    return window;
+  }
+
+  /// Build the plan the OS should be holding right now, without scheduling it.
+  /// The notification settings screen renders this so the user sees exactly
+  /// what the scheduler would queue.
+  static Future<List<PlannedNotification>> buildPlan(
+    ScheduleState schedule,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
-    final shiftEnabled = prefs.getBool(AppConstants.shiftReminderKey) ?? true;
-    final sleepEnabled = prefs.getBool(AppConstants.sleepReminderKey) ?? true;
-    final minutesBefore = prefs.getInt(AppConstants.reminderMinutesKey) ?? 60;
-
-    final notif = NotificationService.instance;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final window = await _resolveWindow(schedule, today);
 
-    // --- Shift start reminders (slots 2000-2006) ---
-    // Always cancel previous slots first so stale shifts never fire.
-    for (int slot = 0; slot < _slots; slot++) {
-      await notif.cancelNotification(2000 + slot);
-    }
-    if (shiftEnabled) {
-      int slot = 0;
-      for (int i = 0; i <= 14 && slot < _slots; i++) {
-        final date = today.add(Duration(days: i));
-        final shift = schedule.getShiftForDate(date);
-        if (shift == null ||
-            shift.type == AppConstants.shiftOff ||
-            shift.startTime == null) continue;
+    return NotificationPlanner.build(
+      now: now,
+      shiftFor: (date) => window[DateTime(date.year, date.month, date.day)],
+      shiftEnabled: prefs.getBool(AppConstants.shiftReminderKey) ?? true,
+      sleepEnabled: prefs.getBool(AppConstants.sleepReminderKey) ?? true,
+      minutesBefore: prefs.getInt(AppConstants.reminderMinutesKey) ?? 60,
+    );
+  }
 
-        final parts = shift.startTime!.split(':');
-        final shiftStart = DateTime(
-          date.year, date.month, date.day,
-          int.parse(parts[0]), int.parse(parts[1]),
-        );
+  static Future<void> rescheduleForSchedule(ScheduleState schedule) async {
+    final plan = await buildPlan(schedule);
+    final notif = NotificationService.instance;
 
-        // scheduleShiftReminder internally skips if reminder time is past.
-        await notif.scheduleShiftReminder(
-          id: 2000 + slot,
-          shiftType: shift.type,
-          shiftStart: shiftStart,
-          minutesBefore: minutesBefore,
-        );
-        slot++;
-      }
+    // Always clear the previous generation first so stale shifts never fire.
+    for (final id in NotificationPlanner.allIds) {
+      await notif.cancelNotification(id);
     }
 
-    // --- Smart sleep / caffeine / pre-shift (day-offset slots) ---
-    // Always cancel previous slots first (the old code only cancelled when
-    // disabled, so changed days left stale reminders behind).
-    for (int i = 0; i < _slots; i++) {
-      await notif.cancelNotification(1100 + i);
-      await notif.cancelNotification(4000 + i);
-      await notif.cancelNotification(5000 + i);
-    }
-    if (sleepEnabled) {
-      for (int i = 0; i < _slots; i++) {
-        final date = today.add(Duration(days: i));
-        final tomorrow = date.add(const Duration(days: 1));
-        final tomorrowShift = schedule.getShiftForDate(tomorrow);
-        final tomorrowType = tomorrowShift?.type ?? 'off';
-
-        final bedtime = await notif.scheduleSmartSleepReminder(
-          id: 1100 + i,
-          tomorrowShiftType: tomorrowType,
-          date: date,
-          shiftStartTime: tomorrowShift?.startTime,
-        );
-
-        if (bedtime != null) {
-          await notif.scheduleCaffeineCutoff(id: 5000 + i, bedtime: bedtime);
-        }
-
-        await notif.schedulePreShiftAlert(
-          id: 4000 + i,
-          tomorrowShiftType: tomorrowType,
-          today: date,
-        );
-      }
+    for (final planned in plan) {
+      await notif.schedulePlanned(planned);
     }
   }
 }

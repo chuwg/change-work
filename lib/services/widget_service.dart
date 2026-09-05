@@ -87,12 +87,24 @@ class WidgetService {
 
     final entries = week.map((date) {
       final shift = state.getShiftForDate(date);
+      final type = shift?.type ?? 'none';
+      final defaults = AppConstants.defaultShiftTimes[type];
+      // Carry the times per day too: the widget/watch derive "today" from this
+      // list by date, so they must not fall back to the dateless snapshot keys.
+      final start = (shift?.startTime?.isNotEmpty ?? false)
+          ? shift!.startTime!
+          : (defaults?['start'] ?? '');
+      final end = (shift?.endTime?.isNotEmpty ?? false)
+          ? shift!.endTime!
+          : (defaults?['end'] ?? '');
       return {
         'date':
             '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
-        'type': shift?.type ?? 'none',
+        'type': type,
         'label':
             shift != null ? AppHelpers.getShiftLabel(shift.type) : '-',
+        'start': start,
+        'end': end,
       };
     }).toList();
 

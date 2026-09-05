@@ -22,7 +22,9 @@ struct HealthSummaryView: View {
         }
         .background(Color(red: 0.1, green: 0.08, blue: 0.07))
         .onAppear {
-            healthKit.requestAuthorization()
+            if !ScreenshotMode.isActive {
+                healthKit.requestAuthorization()
+            }
         }
     }
 

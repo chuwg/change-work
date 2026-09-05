@@ -18,6 +18,7 @@
 		364BABC00FCBB1FAA8773A5F /* TodayShiftView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3B609322E635E115A01D0EA /* TodayShiftView.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		44548B6439E07F3361132DAF /* EnergyRecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC3AE535369D2D53C2F738B5 /* EnergyRecordView.swift */; };
+		1507387343548F1F8F21264C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3E253320F8FE077008B9A077 /* Assets.xcassets */; };
 		4A295588D2D4A1719FCDA9C6 /* WidgetDataReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15496EDD17C903E09B6B963F /* WidgetDataReader.swift */; };
 		4C8F521D5A942F9D4045158B /* HealthSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AFF8E8E791E2D567D04D786 /* HealthSummaryView.swift */; };
 		53447E1E9B8732A3DAD6DEF5 /* WidgetDataReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15496EDD17C903E09B6B963F /* WidgetDataReader.swift */; };
@@ -133,6 +134,7 @@
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
 		15496EDD17C903E09B6B963F /* WidgetDataReader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetDataReader.swift; sourceTree = "<group>"; };
+		3E253320F8FE077008B9A077 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2F3B9DB62844115AD621024B /* WatchDataExtensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchDataExtensions.swift; path = ../../Shared/WatchDataExtensions.swift; sourceTree = "<group>"; };
 		32FCCBFED5D0D5AC09D4B653 /* ShiftComplicationProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShiftComplicationProvider.swift; sourceTree = "<group>"; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
@@ -395,6 +397,7 @@
 				03B5C88B707A5B5FD515D567 /* Shared */,
 				CCD8CD6C377803995192A2BC /* ChangeWatchApp.swift */,
 				BB691145861BE2D2EC50B0C8 /* ContentView.swift */,
+				3E253320F8FE077008B9A077 /* Assets.xcassets */,
 				3AF2DF85A4C8294741686D52 /* Info.plist */,
 				12A4028CE1B2AEDB562D2BF4 /* ChangeWatch.entitlements */,
 			);
@@ -471,6 +474,7 @@
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				B46D77B6709FFFA2566D6752 /* Embed App Extensions */,
+				2A06A63814B4F7E35A08B073 /* Embed Watch Content */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				A5D1A1D46B0F2461473A468D /* [CP] Embed Pods Frameworks */,
 			);
@@ -478,6 +482,7 @@
 			);
 			dependencies = (
 				DFB329D5D551416C73488204 /* PBXTargetDependency */,
+				61107CE7867F21AD10C24A18 /* PBXTargetDependency */,
 			);
 			name = Runner;
 			productName = Runner;
@@ -580,6 +585,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1507387343548F1F8F21264C /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -874,14 +880,15 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = ChangeWatch/ChangeWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 46JK8AG764;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChangeWatch/Info.plist;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.10;
 				PRODUCT_BUNDLE_IDENTIFIER = com.change.app.change.watchkitapp;
 				PRODUCT_NAME = ChangeWatch;
 				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -897,14 +904,16 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = ChangeWatch/ChangeWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 46JK8AG764;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChangeWatch/Info.plist;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.10;
 				PRODUCT_BUNDLE_IDENTIFIER = com.change.app.change.watchkitapp;
 				PRODUCT_NAME = ChangeWatch;
 				SDKROOT = watchos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -967,14 +976,16 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ChangeWatchComplication/ChangeWatchComplication.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 46JK8AG764;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChangeWatchComplication/Info.plist;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.10;
 				PRODUCT_BUNDLE_IDENTIFIER = com.change.app.change.watchkitapp.shiftcomplication;
 				PRODUCT_NAME = ChangeWatchComplication;
 				SDKROOT = watchos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				WATCHOS_DEPLOYMENT_TARGET = 10.0;
@@ -986,14 +997,15 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ChangeWatchComplication/ChangeWatchComplication.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 46JK8AG764;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChangeWatchComplication/Info.plist;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.10;
 				PRODUCT_BUNDLE_IDENTIFIER = com.change.app.change.watchkitapp.shiftcomplication;
 				PRODUCT_NAME = ChangeWatchComplication;
 				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				VALIDATE_PRODUCT = YES;
@@ -1007,12 +1019,12 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = ChangeWidget/ChangeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 46JK8AG764;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChangeWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.10;
 				PRODUCT_BUNDLE_IDENTIFIER = com.change.app.change.ChangeWidget;
 				PRODUCT_NAME = ChangeWidget;
 				SDKROOT = iphoneos;
@@ -1028,12 +1040,12 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = ChangeWidget/ChangeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 46JK8AG764;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChangeWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.10;
 				PRODUCT_BUNDLE_IDENTIFIER = com.change.app.change.ChangeWidget;
 				PRODUCT_NAME = ChangeWidget;
 				SDKROOT = iphoneos;
@@ -1048,14 +1060,15 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ChangeWatchComplication/ChangeWatchComplication.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 46JK8AG764;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChangeWatchComplication/Info.plist;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.10;
 				PRODUCT_BUNDLE_IDENTIFIER = com.change.app.change.watchkitapp.shiftcomplication;
 				PRODUCT_NAME = ChangeWatchComplication;
 				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				VALIDATE_PRODUCT = YES;
@@ -1230,14 +1243,15 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = ChangeWatch/ChangeWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 46JK8AG764;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChangeWatch/Info.plist;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.10;
 				PRODUCT_BUNDLE_IDENTIFIER = com.change.app.change.watchkitapp;
 				PRODUCT_NAME = ChangeWatch;
 				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -1252,12 +1266,12 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = ChangeWidget/ChangeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 46JK8AG764;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ChangeWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.10;
 				PRODUCT_BUNDLE_IDENTIFIER = com.change.app.change.ChangeWidget;
 				PRODUCT_NAME = ChangeWidget;
 				SDKROOT = iphoneos;
