@@ -39,15 +39,28 @@ xcodebuild -workspace "$(dirname "$0")/../ios/Runner.xcworkspace" \
 APP=$(find ~/Library/Developer/Xcode/DerivedData/Runner-*/Build/Products/Debug-watchsimulator \
   -maxdepth 1 -name "ChangeWatch.app" -print0 | xargs -0 ls -td | head -1)
 
-# A shift week with every type represented, starting today on a night shift so
-# the timer page shows a run in progress.
+# A shift week with every type represented. Today is whichever shift is
+# actually running right now, so the timer page always shows a live countdown
+# instead of "종료" — the capture must look the same whatever time it is run.
 WEEK_JSON=$(python3 - <<'PY'
 import json, datetime
 TIMES = {'day': ('06:00', '14:00'), 'evening': ('14:00', '22:00'),
          'night': ('22:00', '06:00'), 'off': ('', '')}
 LABEL = {'day': '주간', 'evening': '오후', 'night': '야간', 'off': '휴무'}
-PLAN = ['night', 'night', 'off', 'off', 'day', 'day', 'evening',
-        'evening', 'night', 'night', 'off', 'off', 'day', 'day']
+hour = datetime.datetime.now().hour
+if 6 <= hour < 14:
+    today_type = 'day'
+elif 14 <= hour < 22:
+    today_type = 'evening'
+else:
+    today_type = 'night'
+
+others = [t for t in ('day', 'evening', 'night') if t != today_type]
+# Two days on the current shift, two off, then the other two types — every
+# colour shows up in the week strip.
+PLAN = [today_type, today_type, 'off', 'off', others[0], others[0], others[1],
+        others[1], today_type, today_type, 'off', 'off', others[0], others[0]]
+
 today = datetime.date.today()
 print(json.dumps([
     {'date': (today + datetime.timedelta(days=i)).strftime('%Y-%m-%d'),
@@ -56,6 +69,14 @@ print(json.dumps([
 ], ensure_ascii=False))
 PY
 )
+
+TODAY=$(printf '%s' "$WEEK_JSON" | python3 -c "
+import json,sys
+d = json.load(sys.stdin)[0]
+print(d['type'], d['label'], d['start'], d['end'])
+")
+read -r TODAY_TYPE TODAY_LABEL TODAY_START TODAY_END <<<"$TODAY"
+echo "today: $TODAY_LABEL $TODAY_START-$TODAY_END"
 
 xcrun simctl shutdown "$UDID" >/dev/null 2>&1 || true
 xcrun simctl erase "$UDID"
@@ -75,10 +96,10 @@ capture() {
 
   xcrun simctl spawn "$UDID" defaults write "$prefs" screenshot_initial_tab -int "$tab"
   xcrun simctl spawn "$UDID" defaults write "$prefs" widget_week_shifts -string "$WEEK_JSON"
-  xcrun simctl spawn "$UDID" defaults write "$prefs" widget_today_shift_type -string night
-  xcrun simctl spawn "$UDID" defaults write "$prefs" widget_today_shift_label -string 야간
-  xcrun simctl spawn "$UDID" defaults write "$prefs" widget_today_shift_start -string 22:00
-  xcrun simctl spawn "$UDID" defaults write "$prefs" widget_today_shift_end -string 06:00
+  xcrun simctl spawn "$UDID" defaults write "$prefs" widget_today_shift_type -string "$TODAY_TYPE"
+  xcrun simctl spawn "$UDID" defaults write "$prefs" widget_today_shift_label -string "$TODAY_LABEL"
+  xcrun simctl spawn "$UDID" defaults write "$prefs" widget_today_shift_start -string "$TODAY_START"
+  xcrun simctl spawn "$UDID" defaults write "$prefs" widget_today_shift_end -string "$TODAY_END"
   xcrun simctl spawn "$UDID" defaults write "$prefs" widget_energy_latest -int 4
   xcrun simctl spawn "$UDID" defaults write "$prefs" widget_energy_avg -float 3.8
   xcrun simctl spawn "$UDID" defaults write "$prefs" widget_sleep_hours -float 6.8

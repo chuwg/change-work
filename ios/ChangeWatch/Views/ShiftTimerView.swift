@@ -54,7 +54,7 @@ struct ShiftTimerView: View {
             let (start, end) = parseTimes(now: now)
             let status = timerStatus(now: now, start: start, end: end)
 
-            VStack(spacing: 8) {
+            VStack(spacing: 10) {
                 // Shift info
                 HStack(spacing: 6) {
                     Image(systemName: shiftType.icon)
@@ -65,23 +65,58 @@ struct ShiftTimerView: View {
                         .foregroundColor(.white)
                 }
 
-                // Gauge
-                Gauge(value: status.progress) {
-                    EmptyView()
-                } currentValueLabel: {
-                    VStack(spacing: 2) {
-                        Text(status.timeText)
-                            .font(.system(size: 18, weight: .bold, design: .monospaced))
-                            .foregroundColor(.white)
-                        Text(status.label)
-                            .font(.system(size: 10))
-                            .foregroundColor(Color(white: 0.5))
+                // Progress ring, drawn directly rather than with a scaled-up
+                // Gauge. `.accessoryCircular` is sized for a watch-face
+                // complication — its centre label area only fits a couple of
+                // characters, and `.scaleEffect` enlarges the overflow along
+                // with everything else instead of re-laying it out, so the
+                // remaining-time text used to sit on top of the ring.
+                // Progress ring, drawn directly rather than with a scaled-up
+                // Gauge. `.accessoryCircular` is sized for a watch-face
+                // complication — its centre label area only fits a couple of
+                // characters, and `.scaleEffect` enlarges the overflow along
+                // with everything else instead of re-laying it out, so the
+                // remaining-time text used to sit on top of the ring.
+                //
+                // GeometryReader takes whatever the VStack has left and the
+                // ring is sized from it, so the same layout holds from a 40mm
+                // SE up to a 49mm Ultra without per-device tweaks.
+                GeometryReader { geo in
+                    let d = min(geo.size.width, geo.size.height)
+
+                    ZStack {
+                        Circle()
+                            .stroke(shiftType.color.opacity(0.2),
+                                    lineWidth: Self.ringWidth)
+
+                        Circle()
+                            .trim(from: 0, to: status.progress)
+                            .stroke(
+                                shiftType.color,
+                                style: StrokeStyle(lineWidth: Self.ringWidth,
+                                                   lineCap: .round)
+                            )
+                            .rotationEffect(.degrees(-90))
+
+                        VStack(spacing: 2) {
+                            Text(status.timeText)
+                                .font(.system(size: d * 0.20,
+                                              weight: .bold,
+                                              design: .monospaced))
+                                .foregroundColor(.white)
+                            Text(status.label)
+                                .font(.system(size: d * 0.075))
+                                .foregroundColor(Color(white: 0.55))
+                        }
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                        // Keep the text off the stroke on every watch size.
+                        .padding(.horizontal, Self.ringWidth + d * 0.06)
                     }
+                    .frame(width: d, height: d)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .gaugeStyle(.accessoryCircular)
-                .tint(shiftType.color)
-                .scaleEffect(2.2)
-                .frame(height: 90)
+                .frame(maxWidth: 160)
 
                 // Time range
                 Text("\(startStr) → \(endStr)")
@@ -93,6 +128,8 @@ struct ShiftTimerView: View {
             .background(Color(red: 0.1, green: 0.08, blue: 0.07))
         }
     }
+
+    private static let ringWidth: CGFloat = 12
 
     private struct TimerStatus {
         let progress: Double
