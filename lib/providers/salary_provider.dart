@@ -276,8 +276,6 @@ class SalaryNotifier extends StateNotifier<SalaryState> {
     return 0.0;
   }
 
-  int _daysInMonth(int year, int month) =>
-      DateTime(year, month + 1, 0).day;
 }
 
 class _ShiftAccum {
