@@ -9,6 +9,7 @@ import '../../providers/health_provider.dart';
 import '../../providers/health_sync_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../utils/helpers.dart';
+import '../../services/condition_score.dart';
 import '../../widgets/condition_metric.dart';
 import '../../widgets/health_tip_card.dart';
 import '../../widgets/sleep_chart.dart';
@@ -69,7 +70,12 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
     final schedule = ref.watch(scheduleProvider);
 
     // Compute condition score
-    final conditionScore = _computeConditionScore(sleep, energy, healthSync);
+    final conditionScore = ConditionScore.compute(
+      todaySleep: sleep.todaySleep,
+      averageSleepHours: sleep.averageSleepHours,
+      todayEnergy: energy.todayAverageEnergy,
+      todaySteps: healthSync.todaySteps,
+    );
 
     // Data-driven tips only (priority 0 and 1)
     final insightTips =
@@ -841,68 +847,6 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
   }
 
   // --- Helpers ---
-  int _computeConditionScore(
-    SleepState sleep,
-    EnergyState energy,
-    HealthSyncState healthSync,
-  ) {
-    double score = 0;
-    double totalWeight = 0;
-
-    // Sleep factor (40% weight)
-    double? sleepScore;
-    final todaySleep = sleep.todaySleep;
-    if (todaySleep != null) {
-      // Total across every session: a split-sleep day is not a short night.
-      final hours = todaySleep.totalHours;
-      final quality = todaySleep.quality;
-      if (hours >= 7 && hours <= 9) {
-        sleepScore = 90;
-      } else if (hours >= 6) {
-        sleepScore = 70;
-      } else if (hours >= 5) {
-        sleepScore = 50;
-      } else {
-        sleepScore = 30;
-      }
-      sleepScore = (sleepScore + (quality - 3) * 5).clamp(0, 100);
-    } else if (sleep.averageSleepHours > 0) {
-      sleepScore = sleep.averageSleepHours >= 7 ? 75.0 : 50.0;
-    }
-    if (sleepScore != null) {
-      score += sleepScore * 0.4;
-      totalWeight += 0.4;
-    }
-
-    // Energy factor (35% weight)
-    if (energy.todayAverageEnergy > 0) {
-      final energyScore = (energy.todayAverageEnergy / 5) * 100;
-      score += energyScore * 0.35;
-      totalWeight += 0.35;
-    }
-
-    // Activity factor (25% weight)
-    if (healthSync.todaySteps != null && healthSync.todaySteps! > 0) {
-      final steps = healthSync.todaySteps!;
-      double activityScore;
-      if (steps >= 8000) {
-        activityScore = 90;
-      } else if (steps >= 5000) {
-        activityScore = 70;
-      } else if (steps >= 3000) {
-        activityScore = 50;
-      } else {
-        activityScore = 30;
-      }
-      score += activityScore * 0.25;
-      totalWeight += 0.25;
-    }
-
-    if (totalWeight == 0) return 50;
-    // Normalize by actual weight sum to get proper 0-100 scale
-    return (score / totalWeight).round().clamp(0, 100);
-  }
-
   String _formatSteps(int steps) {
     if (steps >= 10000) {
       return '${(steps / 10000).toStringAsFixed(1)}만';
