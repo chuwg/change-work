@@ -32,7 +32,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
   }
 
-  Future<void> _loadData() async {
+  /// Reload the dashboard.
+  ///
+  /// [full] also re-runs the once-per-visit work — notification rescheduling,
+  /// the motivation quote and the weekly report — which is wasteful to repeat
+  /// every time the user taps back onto this tab.
+  /// [syncThrottle] is passed to the HealthKit sync so tab switches don't
+  /// re-read HealthKit each time; pull-to-refresh leaves it null to force one.
+  Future<void> _loadData({bool full = true, Duration? syncThrottle}) async {
     try {
       final now = DateTime.now();
       await ref
@@ -53,18 +60,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           .read(salaryProvider.notifier)
           .calculateForMonth(now.year, now.month);
 
-      // Reschedule all schedule-dependent notifications (shift reminders +
-      // smart sleep/caffeine/pre-shift), always cancelling stale slots first.
-      await NotificationScheduler.rescheduleForSchedule(
-          ref.read(scheduleProvider));
-      // Reschedule motivation notification with new random quote
-      await _rescheduleMotivationNotification();
-      // Schedule weekly report notification (every Sunday 20:00)
-      await NotificationService.instance.scheduleWeeklyReport(id: 6000);
+      if (full) {
+        // Reschedule all schedule-dependent notifications (shift reminders +
+        // smart sleep/caffeine/pre-shift), always cancelling stale slots first.
+        await NotificationScheduler.rescheduleForSchedule(
+            ref.read(scheduleProvider));
+        // Reschedule motivation notification with new random quote
+        await _rescheduleMotivationNotification();
+        // Schedule weekly report notification (every Sunday 20:00)
+        await NotificationService.instance.scheduleWeeklyReport(id: 6000);
+      }
 
-      // Auto-sync sleep from HealthKit/Health Connect if enabled
-      // Run in background to not block UI
-      ref.read(healthSyncProvider.notifier).autoSync();
+      // Auto-sync sleep from HealthKit/Health Connect if enabled.
+      // Deliberately not awaited: the first paint should not wait on HealthKit,
+      // and healthProvider re-runs the tip generator once the data lands.
+      ref.read(healthSyncProvider.notifier).autoSync(minInterval: syncThrottle);
     } catch (_) {
       // DB not available on web — load health tips only
       await ref.read(healthProvider.notifier).refreshHealthData();
@@ -90,6 +100,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // MainShell keeps this screen alive inside an IndexedStack, so initState
+    // runs exactly once. Without this the dashboard kept showing whatever was
+    // loaded at launch — steps walked during the day, shifts edited on the
+    // calendar and the salary card all stayed frozen until a pull-to-refresh.
+    ref.listen<int>(tabIndexProvider, (previous, next) {
+      if (next == AppTab.home && previous != next) {
+        _loadData(full: false, syncThrottle: const Duration(minutes: 2));
+      }
+    });
+
     final schedule = ref.watch(scheduleProvider);
     final sleep = ref.watch(sleepProvider);
     final health = ref.watch(healthProvider);

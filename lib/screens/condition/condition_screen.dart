@@ -9,6 +9,7 @@ import '../../providers/health_provider.dart';
 import '../../providers/health_sync_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../utils/helpers.dart';
+import '../../widgets/condition_metric.dart';
 import '../../widgets/health_tip_card.dart';
 import '../../widgets/sleep_chart.dart';
 
@@ -323,66 +324,54 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
           // Metrics row
           Expanded(
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildMetric(
-                  icon: Icons.bedtime_rounded,
-                  label: '수면',
-                  value: sleep.todayRecord != null
-                      ? '${sleep.todayRecord!.durationHours.toStringAsFixed(1)}h'
-                      : sleep.averageSleepHours > 0
-                          ? '${sleep.averageSleepHours.toStringAsFixed(1)}h'
-                          : '--',
-                  color: const Color(0xFF7E57C2),
+                Expanded(
+                  child: ConditionMetric(
+                    icon: Icons.bedtime_rounded,
+                    label: '수면',
+                    value: sleep.todayRecord != null
+                        ? '${sleep.todayRecord!.durationHours.toStringAsFixed(1)}h'
+                        : sleep.averageSleepHours > 0
+                            ? '${sleep.averageSleepHours.toStringAsFixed(1)}h'
+                            : '--',
+                    color: const Color(0xFF7E57C2),
+                  ),
                 ),
-                _buildMetric(
-                  icon: Icons.bolt_rounded,
-                  label: '에너지',
-                  value: energy.todayAverageEnergy > 0
-                      ? '${energy.todayAverageEnergy.toStringAsFixed(1)}'
-                      : '--',
-                  color: AppTheme.primary,
+                Expanded(
+                  child: ConditionMetric(
+                    icon: Icons.bolt_rounded,
+                    label: '에너지',
+                    value: energy.todayAverageEnergy > 0
+                        ? energy.todayAverageEnergy.toStringAsFixed(1)
+                        : '--',
+                    color: AppTheme.primary,
+                  ),
                 ),
-                _buildMetric(
-                  icon: Icons.directions_walk_rounded,
-                  label: '걸음',
-                  value: healthSync.todaySteps != null
-                      ? _formatSteps(healthSync.todaySteps!)
-                      : '--',
-                  color: const Color(0xFF4CAF50),
+                Expanded(
+                  child: ConditionMetric(
+                    icon: Icons.directions_walk_rounded,
+                    label: '걸음',
+                    value: healthSync.todaySteps != null
+                        ? _formatSteps(healthSync.todaySteps!)
+                        : '--',
+                    color: const Color(0xFF4CAF50),
+                  ),
+                ),
+                Expanded(
+                  child: ConditionMetric(
+                    icon: Icons.favorite_rounded,
+                    label: '심박',
+                    value: healthSync.lastHeartRate != null
+                        ? '${healthSync.lastHeartRate!.round()}'
+                        : '--',
+                    color: const Color(0xFFE57373),
+                  ),
                 ),
               ],
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildMetric({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: color, size: 18),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            color: AppTheme.textPrimary,
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
-        ),
-      ],
     );
   }
 
