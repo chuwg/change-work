@@ -5,6 +5,7 @@ import '../../config/theme.dart';
 import '../../providers/sleep_provider.dart';
 import '../../providers/energy_provider.dart';
 import '../../providers/schedule_provider.dart';
+import '../../services/weekly_report.dart';
 import '../../providers/health_sync_provider.dart';
 import '../../utils/helpers.dart';
 
@@ -18,26 +19,27 @@ class WeeklyReportScreen extends ConsumerWidget {
     final schedule = ref.watch(scheduleProvider);
     final healthSync = ref.watch(healthSyncProvider);
 
-    final weeklySleep = sleep.last7Days;
+    // Per *day*, not per record: sleep is stored one row per session and a
+    // split-sleep day would otherwise count twice — including in the sleep
+    // debt target, which told well-rested shift workers they were behind.
+    final weeklySleep = sleep.last7DaysByDay;
     final weeklyEnergy = energy.last7Days;
 
-    // Calculate weekly stats
-    final avgSleepHours = weeklySleep.isEmpty
-        ? 0.0
-        : weeklySleep.fold<double>(0, (s, r) => s + r.durationHours) /
-            weeklySleep.length;
-    final avgSleepQuality = weeklySleep.isEmpty
-        ? 0.0
-        : weeklySleep.fold<int>(0, (s, r) => s + r.quality) /
-            weeklySleep.length;
-    final avgEnergy = weeklyEnergy.isEmpty
-        ? 0.0
-        : weeklyEnergy.fold<int>(0, (s, r) => s + r.energyLevel) /
-            weeklyEnergy.length;
+    final stats = WeeklyStats.from(
+      sleepDays: weeklySleep,
+      energy: weeklyEnergy,
+    );
+    final avgSleepHours = stats.avgSleepHours;
+    final avgSleepQuality = stats.avgSleepQuality;
+    final avgEnergy = stats.avgEnergy;
+    final sleepDebt = stats.sleepDebt;
+    final bestSleep = stats.bestSleepDay;
+    final worstSleep = stats.worstSleepDay;
 
     // Shift type counts this week
     final now = DateTime.now();
-    final weekStart = now.subtract(Duration(days: now.weekday - 1));
+    final weekStart = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1));
     int dayCount = 0, eveningCount = 0, nightCount = 0, offCount = 0;
     for (int i = 0; i < 7; i++) {
       final date = weekStart.add(Duration(days: i));
@@ -52,26 +54,6 @@ class WeeklyReportScreen extends ConsumerWidget {
         nightCount++;
       }
     }
-
-    // Sleep debt (7h * days - actual)
-    final sleepDebt = weeklySleep.isEmpty
-        ? 0.0
-        : (7.0 * weeklySleep.length) -
-            weeklySleep.fold<double>(0, (s, r) => s + r.durationHours);
-
-    // Best/worst sleep day
-    final bestSleep = weeklySleep.isNotEmpty
-        ? (weeklySleep.toList()
-              ..sort(
-                  (a, b) => b.durationHours.compareTo(a.durationHours)))
-            .first
-        : null;
-    final worstSleep = weeklySleep.isNotEmpty
-        ? (weeklySleep.toList()
-              ..sort(
-                  (a, b) => a.durationHours.compareTo(b.durationHours)))
-            .first
-        : null;
 
     return Scaffold(
       backgroundColor: AppTheme.bgDark,
@@ -113,7 +95,7 @@ class WeeklyReportScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _getOverallGrade(avgSleepHours, avgEnergy, sleepDebt),
+                  stats.grade,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 32,
@@ -122,7 +104,7 @@ class WeeklyReportScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _getOverallMessage(avgSleepHours, avgEnergy, sleepDebt),
+                  _messageForGrade(stats.grade),
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 13,
@@ -205,7 +187,7 @@ class WeeklyReportScreen extends ConsumerWidget {
                     height: 150,
                     child: BarChart(
                       BarChartData(
-                        barGroups: _buildSleepBars(weeklySleep, weekStart),
+                        barGroups: _buildSleepBars(stats, weekStart),
                         borderData: FlBorderData(show: false),
                         gridData: const FlGridData(show: false),
                         titlesData: FlTitlesData(
@@ -246,7 +228,7 @@ class WeeklyReportScreen extends ConsumerWidget {
                         child: _buildMiniInsight(
                           Icons.arrow_upward_rounded,
                           AppTheme.success,
-                          '최고: ${_weekdayName(bestSleep.date)} ${bestSleep.durationHours.toStringAsFixed(1)}h',
+                          '최고: ${_weekdayName(bestSleep.date)} ${bestSleep.totalHours.toStringAsFixed(1)}h',
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -254,7 +236,7 @@ class WeeklyReportScreen extends ConsumerWidget {
                         child: _buildMiniInsight(
                           Icons.arrow_downward_rounded,
                           AppTheme.error,
-                          '최저: ${_weekdayName(worstSleep.date)} ${worstSleep.durationHours.toStringAsFixed(1)}h',
+                          '최저: ${_weekdayName(worstSleep.date)} ${worstSleep.totalHours.toStringAsFixed(1)}h',
                         ),
                       ),
                     ],
@@ -463,18 +445,13 @@ class WeeklyReportScreen extends ConsumerWidget {
   }
 
   List<BarChartGroupData> _buildSleepBars(
-      List sleepRecords, DateTime weekStart) {
+      WeeklyStats stats, DateTime weekStart) {
     final bars = <BarChartGroupData>[];
     for (int i = 0; i < 7; i++) {
       final date = weekStart.add(Duration(days: i));
-      final record = sleepRecords.cast<dynamic>().where((r) {
-        final d = r.date as DateTime;
-        return d.year == date.year &&
-            d.month == date.month &&
-            d.day == date.day;
-      }).toList();
-      final hours =
-          record.isNotEmpty ? (record.first.durationHours as double) : 0.0;
+      // The day's total — previously this took the first matching record, so a
+      // split-sleep day was drawn as whichever session came back first.
+      final hours = stats.hoursOn(date);
       final color = hours >= 7
           ? AppTheme.success
           : hours >= 5
@@ -617,32 +594,7 @@ class WeeklyReportScreen extends ConsumerWidget {
     );
   }
 
-  String _getOverallGrade(
-      double avgSleep, double avgEnergy, double sleepDebt) {
-    double score = 0;
-    if (avgSleep >= 7) score += 40;
-    else if (avgSleep >= 6) score += 25;
-    else if (avgSleep > 0) score += 10;
-
-    if (avgEnergy >= 3.5) score += 35;
-    else if (avgEnergy >= 2.5) score += 20;
-    else if (avgEnergy > 0) score += 10;
-
-    if (sleepDebt <= 2) score += 25;
-    else if (sleepDebt <= 5) score += 15;
-    else score += 5;
-
-    if (score >= 85) return 'A+';
-    if (score >= 75) return 'A';
-    if (score >= 60) return 'B+';
-    if (score >= 45) return 'B';
-    if (score >= 30) return 'C';
-    return 'D';
-  }
-
-  String _getOverallMessage(
-      double avgSleep, double avgEnergy, double sleepDebt) {
-    final grade = _getOverallGrade(avgSleep, avgEnergy, sleepDebt);
+  String _messageForGrade(String grade) {
     switch (grade) {
       case 'A+':
         return '완벽한 한 주! 건강 관리의 달인이시네요';
