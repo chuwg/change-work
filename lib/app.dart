@@ -11,7 +11,6 @@ import 'screens/onboarding/onboarding_screen.dart';
 import 'services/widget_service.dart';
 import 'services/notification_scheduler.dart';
 import 'providers/schedule_provider.dart';
-import 'providers/energy_provider.dart';
 import 'providers/health_sync_provider.dart';
 import 'providers/tab_provider.dart';
 
@@ -132,31 +131,11 @@ class _MainShellState extends ConsumerState<MainShell>
       // was backgrounded, so slot→date mappings must be refreshed.
       NotificationScheduler.rescheduleForSchedule(schedule);
       // Pick up any sleep/health data recorded while the app was away.
+      // autoSync() also drains the watch's pending energy records — this used
+      // to have a second, subtly different copy of that import here, and
+      // whichever ran first won because both cleared the same queue.
       ref.read(healthSyncProvider.notifier).autoSync();
-      _importWatchEnergyRecords();
     }
-  }
-
-  Future<void> _importWatchEnergyRecords() async {
-    final pending = await WidgetService.instance.readWatchEnergyRecords();
-    if (pending.isEmpty) return;
-
-    final energyNotifier = ref.read(energyProvider.notifier);
-    final schedule = ref.read(scheduleProvider);
-
-    for (final record in pending) {
-      final level = record['energy_level'] as int;
-      final timestamp = DateTime.parse(record['timestamp'] as String);
-      final shiftType = schedule.getShiftTypeForDate(timestamp);
-
-      await energyNotifier.addEnergyRecord(
-        energyLevel: level,
-        shiftType: shiftType.isEmpty ? null : shiftType,
-        source: 'watch',
-      );
-    }
-
-    await WidgetService.instance.clearWatchEnergyRecords();
   }
 
   @override
@@ -181,10 +160,14 @@ class _MainShellState extends ConsumerState<MainShell>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, Icons.home_rounded, '홈', ref.watch(tabIndexProvider)),
-                _buildNavItem(1, Icons.calendar_month_rounded, '캘린더', ref.watch(tabIndexProvider)),
-                _buildNavItem(2, Icons.monitor_heart_rounded, '컨디션', ref.watch(tabIndexProvider)),
-                _buildNavItem(3, Icons.settings_rounded, '설정', ref.watch(tabIndexProvider)),
+                _buildNavItem(AppTab.home, Icons.home_rounded, '홈',
+                    ref.watch(tabIndexProvider)),
+                _buildNavItem(AppTab.calendar, Icons.calendar_month_rounded,
+                    '캘린더', ref.watch(tabIndexProvider)),
+                _buildNavItem(AppTab.condition, Icons.monitor_heart_rounded,
+                    '컨디션', ref.watch(tabIndexProvider)),
+                _buildNavItem(AppTab.settings, Icons.settings_rounded, '설정',
+                    ref.watch(tabIndexProvider)),
               ],
             ),
           ),

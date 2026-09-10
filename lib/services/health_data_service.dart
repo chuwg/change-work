@@ -105,6 +105,7 @@ class HealthDataService {
   ) async {
     if (!_isAuthorized) return [];
     try {
+      await _ensureConfigured();
       final data = await _health.getHealthDataFromTypes(
         types: _sleepTypes,
         startTime: start,
@@ -117,13 +118,19 @@ class HealthDataService {
   }
 
   /// Fetch step count for a given date range.
-  Future<int> fetchStepsData(DateTime start, DateTime end) async {
-    if (!_isAuthorized) return 0;
+  ///
+  /// Returns null when the data could not be read at all (not authorised, or
+  /// HealthKit threw) so callers can tell that apart from a genuine zero — it
+  /// used to return 0 for both, which showed "0걸음" to users who had simply
+  /// never granted step access, and silently dropped the activity factor from
+  /// the condition score.
+  Future<int?> fetchStepsData(DateTime start, DateTime end) async {
+    if (!_isAuthorized) return null;
     try {
-      final steps = await _health.getTotalStepsInInterval(start, end);
-      return steps ?? 0;
+      await _ensureConfigured();
+      return await _health.getTotalStepsInInterval(start, end);
     } catch (_) {
-      return 0;
+      return null;
     }
   }
 
@@ -134,6 +141,7 @@ class HealthDataService {
   ) async {
     if (!_isAuthorized) return [];
     try {
+      await _ensureConfigured();
       final data = await _health.getHealthDataFromTypes(
         types: [HealthDataType.HEART_RATE],
         startTime: start,

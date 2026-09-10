@@ -136,5 +136,19 @@ class HealthNotifier extends StateNotifier<HealthState> {
 
 final healthProvider =
     StateNotifierProvider<HealthNotifier, HealthState>((ref) {
-  return HealthNotifier(AiHealthService(), ref);
+  final notifier = HealthNotifier(AiHealthService(), ref);
+
+  // Steps and heart rate arrive from HealthKit asynchronously, well after the
+  // first refreshHealthData() call. Nothing used to re-run the tip generator
+  // when they landed, so activity- and heart-rate-based insights were built
+  // from nulls and stayed that way for the life of the app session.
+  ref.listen<HealthSyncState>(healthSyncProvider, (previous, next) {
+    final changed = previous?.todaySteps != next.todaySteps ||
+        previous?.lastHeartRate != next.lastHeartRate;
+    if (changed && !next.isSyncing) {
+      notifier.refreshHealthData();
+    }
+  });
+
+  return notifier;
 });

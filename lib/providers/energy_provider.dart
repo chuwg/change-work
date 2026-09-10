@@ -115,8 +115,11 @@ class EnergyNotifier extends StateNotifier<EnergyState> {
     String? mood,
     String? note,
     String source = 'manual',
+    DateTime? timestamp,
   }) async {
-    final now = DateTime.now();
+    // Records imported from the watch carry the moment they were tapped;
+    // everything else is happening right now.
+    final now = timestamp ?? DateTime.now();
     final record = EnergyRecord(
       id: _uuid.v4(),
       date: DateTime(now.year, now.month, now.day),

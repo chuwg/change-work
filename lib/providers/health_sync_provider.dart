@@ -6,6 +6,7 @@ import '../services/database_service.dart';
 import '../services/widget_service.dart';
 import '../providers/sleep_provider.dart';
 import '../providers/energy_provider.dart';
+import '../providers/schedule_provider.dart';
 import '../utils/constants.dart';
 
 class HealthSyncState {
@@ -25,13 +26,17 @@ class HealthSyncState {
     this.lastHeartRate,
   });
 
+  /// Sentinel so `copyWith` can tell "leave as is" apart from "set to null".
+  /// Without it a failed HealthKit read silently kept the previous reading.
+  static const Object _unset = Object();
+
   HealthSyncState copyWith({
     bool? isAuthorized,
     bool? isSyncing,
     bool? syncEnabled,
     DateTime? lastSyncAt,
-    int? todaySteps,
-    double? lastHeartRate,
+    Object? todaySteps = _unset,
+    Object? lastHeartRate = _unset,
     bool clearLastSync = false,
   }) {
     return HealthSyncState(
@@ -39,8 +44,11 @@ class HealthSyncState {
       isSyncing: isSyncing ?? this.isSyncing,
       syncEnabled: syncEnabled ?? this.syncEnabled,
       lastSyncAt: clearLastSync ? null : (lastSyncAt ?? this.lastSyncAt),
-      todaySteps: todaySteps ?? this.todaySteps,
-      lastHeartRate: lastHeartRate ?? this.lastHeartRate,
+      todaySteps:
+          identical(todaySteps, _unset) ? this.todaySteps : todaySteps as int?,
+      lastHeartRate: identical(lastHeartRate, _unset)
+          ? this.lastHeartRate
+          : lastHeartRate as double?,
     );
   }
 }
@@ -49,8 +57,18 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
   final Ref ref;
   final HealthDataService _healthService = HealthDataService.instance;
 
+  /// Completes once the persisted settings have been read. Anything that
+  /// branches on [HealthSyncState.syncEnabled] must await this first — it is
+  /// false until SharedPreferences comes back, and a caller that checked too
+  /// early would skip the sync entirely and never retry.
+  late final Future<void> _settingsLoaded;
+
   HealthSyncNotifier(this.ref) : super(const HealthSyncState()) {
-    _loadSettings();
+    _settingsLoaded = _loadSettings();
+    // Kick the first sync off without blocking construction.
+    _settingsLoaded.then((_) {
+      if (state.syncEnabled) autoSync();
+    });
   }
 
   Future<void> _loadSettings() async {
@@ -64,10 +82,6 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
       syncEnabled: enabled,
       lastSyncAt: lastSync,
     );
-
-    if (enabled) {
-      await autoSync();
-    }
   }
 
   /// Toggle health data sync ON/OFF.
@@ -188,6 +202,8 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
       final records = await WidgetService.instance.readWatchEnergyRecords();
       if (records.isEmpty) return;
 
+      final schedule = ref.read(scheduleProvider);
+
       for (final record in records) {
         final level = record['energy_level'] as int?;
         final timestampStr = record['timestamp'] as String?;
@@ -196,9 +212,16 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
         final timestamp = DateTime.tryParse(timestampStr);
         if (timestamp == null) continue;
 
+        // The timestamp used to be parsed and then thrown away, so a level
+        // tapped at 03:00 was filed at whatever time the phone happened to
+        // sync — which also put it on the wrong day and the wrong shift.
+        final shiftType = schedule.getShiftTypeForDate(timestamp);
+
         await ref.read(energyProvider.notifier).addEnergyRecord(
               energyLevel: level,
+              shiftType: shiftType.isEmpty ? null : shiftType,
               source: 'watch',
+              timestamp: timestamp,
             );
       }
 
@@ -209,11 +232,24 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
 
   /// Auto sync on app start (when sync is enabled).
   /// Also picks up any data synced by iOS background delivery.
-  Future<void> autoSync() async {
+  ///
+  /// [minInterval] skips the HealthKit round-trip when the last sync is more
+  /// recent than that. Callers triggered by navigation pass a short window so
+  /// flipping between tabs doesn't re-read HealthKit every time; an explicit
+  /// pull-to-refresh passes nothing and always syncs.
+  Future<void> autoSync({Duration? minInterval}) async {
+    await _settingsLoaded;
     if (!state.syncEnabled) return;
 
     // Always import Watch energy records even if full sync isn't needed
     await _importWatchEnergyRecords();
+
+    final last = state.lastSyncAt;
+    if (minInterval != null &&
+        last != null &&
+        DateTime.now().difference(last) < minInterval) {
+      return;
+    }
 
     await syncNow();
   }

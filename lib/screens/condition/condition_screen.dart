@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/theme.dart';
 import '../../providers/sleep_provider.dart';
+import '../../providers/tab_provider.dart';
 import '../../providers/energy_provider.dart';
 import '../../providers/health_provider.dart';
 import '../../providers/health_sync_provider.dart';
@@ -25,21 +26,41 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
   }
 
-  Future<void> _loadData() async {
+  /// Reload everything this tab shows.
+  ///
+  /// [syncThrottle] is passed through to the HealthKit sync — tab switches set
+  /// a short window so moving between tabs doesn't re-read HealthKit each
+  /// time, while pull-to-refresh leaves it null to force a fresh read.
+  Future<void> _loadData({Duration? syncThrottle}) async {
     try {
+      // HealthKit first, and awaited. The tips are generated from steps and
+      // heart rate, so refreshing them before the sync lands meant the
+      // activity-based insights were computed from nulls and never redone.
+      // autoSync() no-ops when sync is disabled and waits for the stored
+      // setting, so it is safe to always call.
+      await ref
+          .read(healthSyncProvider.notifier)
+          .autoSync(minInterval: syncThrottle);
+
       await ref.read(sleepProvider.notifier).loadRecords();
       await ref.read(energyProvider.notifier).loadRecords();
       await ref.read(healthProvider.notifier).refreshHealthData();
-      // Auto-sync from HealthKit when enabled
-      final healthSync = ref.read(healthSyncProvider);
-      if (healthSync.syncEnabled && !healthSync.isSyncing) {
-        ref.read(healthSyncProvider.notifier).syncNow();
-      }
     } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
+    // MainShell keeps this screen alive inside an IndexedStack, so initState
+    // runs exactly once for the life of the app. Without this the tab kept
+    // showing whatever was loaded at launch — steps accrued during the day,
+    // energy recorded elsewhere and later HealthKit syncs never appeared
+    // unless the user pulled to refresh.
+    ref.listen<int>(tabIndexProvider, (previous, next) {
+      if (next == AppTab.condition && previous != next) {
+        _loadData(syncThrottle: const Duration(minutes: 2));
+      }
+    });
+
     final sleep = ref.watch(sleepProvider);
     final energy = ref.watch(energyProvider);
     final health = ref.watch(healthProvider);
