@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/shift.dart';
@@ -19,9 +20,22 @@ class DatabaseService {
     return _database!;
   }
 
+  /// Database file name, overridable so each test file gets its own file.
+  /// `flutter test` runs test files concurrently, and two suites sharing the
+  /// app database would clobber each other's fixtures.
+  @visibleForTesting
+  static String databaseName = AppConstants.dbName;
+
+  /// Drop the cached handle so a test can reopen against a different file.
+  @visibleForTesting
+  static Future<void> resetForTesting() async {
+    await _database?.close();
+    _database = null;
+  }
+
   Future<Database> _initDB() async {
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, AppConstants.dbName);
+    final path = join(dbPath, databaseName);
 
     return await openDatabase(
       path,
@@ -296,7 +310,11 @@ class DatabaseService {
     return maps.map((m) => SleepRecord.fromMap(m)).toList();
   }
 
-  Future<SleepRecord?> getSleepRecordForDate(DateTime date) async {
+  /// Every sleep session filed under [date], longest first.
+  ///
+  /// A day can hold more than one: shift workers sleep after a night shift and
+  /// again before the next one.
+  Future<List<SleepRecord>> getSleepRecordsForDate(DateTime date) async {
     final db = await database;
     final dateStr = DateTime(date.year, date.month, date.day).toIso8601String();
 
@@ -304,11 +322,19 @@ class DatabaseService {
       'sleep_records',
       where: 'date = ?',
       whereArgs: [dateStr],
-      limit: 1,
     );
 
-    if (maps.isEmpty) return null;
-    return SleepRecord.fromMap(maps.first);
+    final records = maps.map((m) => SleepRecord.fromMap(m)).toList()
+      ..sort((a, b) => b.duration.compareTo(a.duration));
+    return records;
+  }
+
+  /// The main (longest) sleep session for [date].
+  /// Use [getSleepRecordsForDate] when the day's *total* is what matters.
+  Future<SleepRecord?> getSleepRecordForDate(DateTime date) async {
+    final records = await getSleepRecordsForDate(date);
+    if (records.isEmpty) return null;
+    return records.first;
   }
 
   Future<void> deleteSleepRecord(String id) async {
@@ -318,13 +344,18 @@ class DatabaseService {
 
   Future<Map<String, double>> getAverageSleepByShiftType() async {
     final db = await database;
+    // Sum each day first, then average the days. Averaging raw rows would
+    // count a 90-minute nap as a full day of sleep and drag the figure down
+    // for exactly the shift patterns that produce split sleep.
     final result = await db.rawQuery('''
-      SELECT shift_type,
-        AVG(
-          (julianday(wake_time) - julianday(bed_time)) * 24
-        ) as avg_hours
-      FROM sleep_records
-      WHERE shift_type IS NOT NULL
+      SELECT shift_type, AVG(day_hours) as avg_hours
+      FROM (
+        SELECT shift_type, date,
+          SUM((julianday(wake_time) - julianday(bed_time)) * 24) as day_hours
+        FROM sleep_records
+        WHERE shift_type IS NOT NULL
+        GROUP BY shift_type, date
+      )
       GROUP BY shift_type
     ''');
 

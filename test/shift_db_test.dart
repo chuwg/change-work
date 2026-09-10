@@ -22,7 +22,9 @@ void main() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
 
-    dbPath = p.join(await getDatabasesPath(), AppConstants.dbName);
+    DatabaseService.databaseName = 'shift_test.db';
+    await DatabaseService.resetForTesting();
+    dbPath = p.join(await getDatabasesPath(), DatabaseService.databaseName);
     final file = File(dbPath);
     if (file.existsSync()) file.deleteSync();
 
@@ -81,7 +83,8 @@ void main() {
     await legacy.close();
   });
 
-  tearDownAll(() {
+  tearDownAll(() async {
+    await DatabaseService.resetForTesting();
     final file = File(dbPath);
     if (file.existsSync()) file.deleteSync();
   });

@@ -329,8 +329,8 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                   child: ConditionMetric(
                     icon: Icons.bedtime_rounded,
                     label: '수면',
-                    value: sleep.todayRecord != null
-                        ? '${sleep.todayRecord!.durationHours.toStringAsFixed(1)}h'
+                    value: sleep.todaySleep != null
+                        ? '${sleep.todaySleep!.totalHours.toStringAsFixed(1)}h'
                         : sleep.averageSleepHours > 0
                             ? '${sleep.averageSleepHours.toStringAsFixed(1)}h'
                             : '--',
@@ -377,7 +377,10 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
 
   // --- Sleep Card ---
   Widget _buildSleepCard(SleepState sleep, HealthSyncState healthSync) {
-    final record = sleep.todayRecord;
+    final day = sleep.todaySleep;
+    // Bed/wake times describe the main session; the headline figure is the
+    // day's total, which for a shift worker often spans two sessions.
+    final record = day?.mainSession;
     final hasHealthSync = healthSync.syncEnabled;
 
     return Container(
@@ -451,16 +454,30 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          if (record != null) ...[
+          if (record != null && day != null) ...[
             Row(
               children: [
-                Text(
-                  AppHelpers.formatDuration(record.duration),
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      AppHelpers.formatDuration(day.totalDuration),
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (day.isSplit)
+                      Text(
+                        '${day.sessions.length}회 나눠 잠',
+                        style: const TextStyle(
+                          color: AppTheme.textTertiary,
+                          fontSize: 11,
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -473,7 +490,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                           '기상', AppHelpers.formatTime(record.wakeTime)),
                       const SizedBox(width: 16),
                       _buildSleepStat('품질',
-                          AppHelpers.getSleepQualityLabel(record.quality)),
+                          AppHelpers.getSleepQualityLabel(day.quality)),
                     ],
                   ),
                 ),
@@ -834,9 +851,11 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
 
     // Sleep factor (40% weight)
     double? sleepScore;
-    if (sleep.todayRecord != null) {
-      final hours = sleep.todayRecord!.durationHours;
-      final quality = sleep.todayRecord!.quality;
+    final todaySleep = sleep.todaySleep;
+    if (todaySleep != null) {
+      // Total across every session: a split-sleep day is not a short night.
+      final hours = todaySleep.totalHours;
+      final quality = todaySleep.quality;
       if (hours >= 7 && hours <= 9) {
         sleepScore = 90;
       } else if (hours >= 6) {

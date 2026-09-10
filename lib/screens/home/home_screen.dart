@@ -120,10 +120,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // Energy: use actual or estimate from sleep
     final hasEnergyToday = energy.todayAverageEnergy > 0;
-    final todaySleep = sleep.todayRecord;
+    final todaySleep = sleep.todaySleep;
     final isEnergyEstimated = !hasEnergyToday && todaySleep != null;
     final energyLevel = isEnergyEstimated
-        ? _estimateEnergy(todaySleep.durationHours, todaySleep.quality)
+        ? _estimateEnergy(todaySleep.totalHours, todaySleep.quality)
         : (energy.latestToday?.energyLevel ?? energy.todayAverageEnergy.round());
     final hasEnergy = isEnergyEstimated || hasEnergyToday;
 

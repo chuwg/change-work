@@ -94,10 +94,10 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      if (sleep.todayRecord != null) ...[
+                      if (sleep.todaySleep != null) ...[
                         Text(
                           AppHelpers.formatDuration(
-                              sleep.todayRecord!.duration),
+                              sleep.todaySleep!.totalDuration),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 32,
@@ -110,19 +110,19 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                             _buildSleepStat(
                               '취침',
                               AppHelpers.formatTime(
-                                  sleep.todayRecord!.bedTime),
+                                  sleep.todaySleep!.mainSession.bedTime),
                             ),
                             const SizedBox(width: 24),
                             _buildSleepStat(
                               '기상',
                               AppHelpers.formatTime(
-                                  sleep.todayRecord!.wakeTime),
+                                  sleep.todaySleep!.mainSession.wakeTime),
                             ),
                             const SizedBox(width: 24),
                             _buildSleepStat(
                               '품질',
                               AppHelpers.getSleepQualityLabel(
-                                  sleep.todayRecord!.quality),
+                                  sleep.todaySleep!.quality),
                             ),
                           ],
                         ),

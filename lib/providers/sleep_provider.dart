@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/sleep_record.dart';
+import '../models/daily_sleep.dart';
 import '../services/database_service.dart';
 import '../services/widget_service.dart';
 
@@ -37,16 +38,34 @@ class SleepState {
 
   static const _sentinel = Object();
 
+  /// [records] grouped into days, most recent first.
+  ///
+  /// Every "how much sleep" figure has to come from here: a day can hold more
+  /// than one session, and averaging raw records counts a nap as a whole day.
+  List<DailySleep> get days => DailySleep.groupByDay(records);
+
+  /// Today's sleep, all sessions included. Null when nothing is recorded.
+  DailySleep? get todaySleep {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    for (final day in days) {
+      if (day.date == today) return day;
+    }
+    return null;
+  }
+
   double get averageSleepHours {
-    if (records.isEmpty) return 0;
-    final total = records.fold<double>(0, (sum, r) => sum + r.durationHours);
-    return total / records.length;
+    final grouped = days;
+    if (grouped.isEmpty) return 0;
+    final total = grouped.fold<double>(0, (sum, d) => sum + d.totalHours);
+    return total / grouped.length;
   }
 
   double get averageQuality {
-    if (records.isEmpty) return 0;
-    final total = records.fold<int>(0, (sum, r) => sum + r.quality);
-    return total / records.length;
+    final grouped = days;
+    if (grouped.isEmpty) return 0;
+    final total = grouped.fold<int>(0, (sum, d) => sum + d.quality);
+    return total / grouped.length;
   }
 
   List<SleepRecord> get last7Days {
@@ -56,6 +75,14 @@ class SleepState {
         .where((r) => r.date.isAfter(weekAgo))
         .toList()
       ..sort((a, b) => a.date.compareTo(b.date));
+  }
+
+  /// Last 7 days grouped per day, oldest first — what charts and the weekly
+  /// report should plot, since a split-sleep day is still one day.
+  List<DailySleep> get last7DaysByDay {
+    final now = DateTime.now();
+    final weekAgo = now.subtract(const Duration(days: 7));
+    return days.where((d) => d.date.isAfter(weekAgo)).toList().reversed.toList();
   }
 
   List<SleepRecord> get last30Days {
@@ -85,9 +112,10 @@ class SleepNotifier extends StateNotifier<SleepState> {
       avgByShiftType: avgByShift,
       isLoading: false,
     );
+    final today = state.todaySleep;
     WidgetService.instance.updateSleepData(
-      sleepHours: todayRecord?.durationHours ?? 0,
-      sleepQuality: todayRecord?.quality ?? 0,
+      sleepHours: today?.totalHours ?? 0,
+      sleepQuality: today?.quality ?? 0,
     );
   }
 

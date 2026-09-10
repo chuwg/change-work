@@ -279,18 +279,33 @@ class HealthDataService {
         session.wakeTime.day,
       );
 
-      // If a record already exists for this date, keep the longer session
-      // (main night sleep should win over naps; also handles partial→complete updates)
-      final existing = await db.getSleepRecordForDate(date);
-      if (existing != null) {
-        if (existing.source == 'healthkit' ||
-            existing.source == 'health_connect') {
-          final existingMin =
-              existing.wakeTime.difference(existing.bedTime).inMinutes;
-          final newMin =
-              session.wakeTime.difference(session.bedTime).inMinutes;
-          if (newMin <= existingMin) continue;
+      // Match an existing record by *session window*, not by date.
+      //
+      // Keying on the date alone meant only one session could survive per day,
+      // so a shift worker's pre-shift nap was deleted every sync — six hours
+      // after a night shift plus a 90-minute nap was filed as six hours. The
+      // sessions are already separated correctly above (1-hour gap rule); they
+      // just have to stop overwriting each other here.
+      final sameDay = await db.getSleepRecordsForDate(date);
+      SleepRecord? existing;
+      for (final candidate in sameDay) {
+        if (_sessionsOverlap(session, candidate.bedTime, candidate.wakeTime)) {
+          existing = candidate;
+          break;
         }
+      }
+
+      if (existing != null) {
+        final isSynced = existing.source == 'healthkit' ||
+            existing.source == 'health_connect';
+        // A manual entry is the user's own words — never overwrite it. A synced
+        // one is only replaced when the new read covers more of the same
+        // session (partial → complete).
+        if (!isSynced) continue;
+        final existingMin =
+            existing.wakeTime.difference(existing.bedTime).inMinutes;
+        final newMin = session.wakeTime.difference(session.bedTime).inMinutes;
+        if (newMin <= existingMin) continue;
         await db.deleteSleepRecord(existing.id);
       }
 
