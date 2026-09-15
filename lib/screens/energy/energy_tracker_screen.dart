@@ -31,8 +31,12 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
     final energy = ref.watch(energyProvider);
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
+      // Pushed route with no AppBar: without SafeArea the header
+      // renders underneath the status bar and notch.
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
             // Header
             SliverToBoxAdapter(
               child: Padding(
@@ -402,6 +406,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
             ),
           ],
         ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddEnergyRecord(context),
         backgroundColor: AppTheme.primary,
@@ -413,9 +418,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
   List<MapEntry<DateTime, double>> _getWeeklyAverages(EnergyState energy) {
     final now = DateTime.now();
     final weekAgo = now.subtract(const Duration(days: 7));
-    return energy.dailyAverages
-        .where((e) => e.key.isAfter(weekAgo))
-        .toList();
+    return energy.dailyAverages.where((e) => e.key.isAfter(weekAgo)).toList();
   }
 
   Widget _buildEnergyStat(String label, String value) {
@@ -511,8 +514,8 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                   // Energy level selector
                   const Text(
                     '에너지 레벨',
-                    style: TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 14),
+                    style:
+                        TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -521,8 +524,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                       final level = i + 1;
                       final isSelected = energyLevel == level;
                       return GestureDetector(
-                        onTap: () =>
-                            setSheetState(() => energyLevel = level),
+                        onTap: () => setSheetState(() => energyLevel = level),
                         child: Column(
                           children: [
                             Container(
@@ -569,8 +571,8 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                   // Activity selector
                   const Text(
                     '활동',
-                    style: TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 14),
+                    style:
+                        TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
@@ -580,8 +582,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                       final isSelected = selectedActivity == activity;
                       return GestureDetector(
                         onTap: () => setSheetState(() {
-                          selectedActivity =
-                              isSelected ? null : activity;
+                          selectedActivity = isSelected ? null : activity;
                         }),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -629,8 +630,8 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                   // Mood selector
                   const Text(
                     '기분',
-                    style: TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 14),
+                    style:
+                        TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                   ),
                   const SizedBox(height: 8),
                   Wrap(

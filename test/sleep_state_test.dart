@@ -80,6 +80,28 @@ void main() {
     expect(state.todaySleep, isNull);
   });
 
+  test('last30DaysByDay is also one entry per day', () {
+    final now = DateTime.now();
+    final records = <SleepRecord>[];
+    for (int i = 0; i < 5; i++) {
+      final d = now.subtract(Duration(days: i));
+      records.add(record(
+        DateTime(d.year, d.month, d.day, 1),
+        DateTime(d.year, d.month, d.day, 8),
+      ));
+    }
+    records.add(record(today(19), today(20)));
+
+    final byDay = SleepState(records: records).last30DaysByDay;
+
+    // Six records, five days — the chart draws one bar per day, and a
+    // split-sleep day used to produce a second bar with a duplicate label.
+    expect(records, hasLength(6));
+    expect(byDay, hasLength(5));
+    expect(byDay.last.isSplit, isTrue);
+    expect(byDay.last.totalHours, 8);
+  });
+
   test('last7DaysByDay is one entry per day, oldest first', () {
     final now = DateTime.now();
     final records = <SleepRecord>[];

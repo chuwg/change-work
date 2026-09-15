@@ -2,19 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../config/theme.dart';
 import '../models/sleep_record.dart';
+import '../models/daily_sleep.dart';
 import '../utils/helpers.dart';
 
 class SleepBarChart extends StatelessWidget {
-  final List<SleepRecord> records;
+  /// One entry per day, oldest first.
+  ///
+  /// Takes days rather than raw records on purpose: sleep is stored one row
+  /// per session and shift workers sleep twice a day, so a per-record chart
+  /// drew two bars for one day — each showing only part of that day's sleep.
+  final List<DailySleep> days;
 
   const SleepBarChart({
     super.key,
-    required this.records,
+    required this.days,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (records.isEmpty) {
+    if (days.isEmpty) {
       return const Center(
         child: Text(
           '수면 기록이 없습니다\n수면을 기록해보세요!',
@@ -37,11 +43,12 @@ class SleepBarChart extends StatelessWidget {
           touchTooltipData: BarTouchTooltipData(
             tooltipRoundedRadius: 8,
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
-              if (groupIndex >= records.length) return null;
-              final record = records[groupIndex];
+              if (groupIndex >= days.length) return null;
+              final day = days[groupIndex];
+              final split = day.isSplit ? ' (${day.sessions.length}회)' : '';
               return BarTooltipItem(
-                '${record.durationHours.toStringAsFixed(1)}시간\n'
-                '${AppHelpers.getSleepQualityLabel(record.quality)}',
+                '${day.totalHours.toStringAsFixed(1)}시간$split\n'
+                '${AppHelpers.getSleepQualityLabel(day.quality)}',
                 const TextStyle(
                   color: AppTheme.textPrimary,
                   fontSize: 12,
@@ -82,9 +89,9 @@ class SleepBarChart extends StatelessWidget {
               reservedSize: 24,
               getTitlesWidget: (value, meta) {
                 final index = value.toInt();
-                if (index >= records.length) return const SizedBox();
+                if (index >= days.length) return const SizedBox();
                 final weekdays = ['월', '화', '수', '목', '금', '토', '일'];
-                final weekday = weekdays[records[index].date.weekday - 1];
+                final weekday = weekdays[days[index].date.weekday - 1];
                 return Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
@@ -137,11 +144,11 @@ class SleepBarChart extends StatelessWidget {
   }
 
   List<BarChartGroupData> _buildBarGroups() {
-    return records.asMap().entries.map((entry) {
+    return days.asMap().entries.map((entry) {
       final index = entry.key;
-      final record = entry.value;
-      final hours = record.durationHours.clamp(0, 12).toDouble();
-      final quality = record.quality;
+      final day = entry.value;
+      final hours = day.totalHours.clamp(0, 12).toDouble();
+      final quality = day.quality;
 
       Color barColor;
       if (quality >= 4) {
@@ -157,7 +164,7 @@ class SleepBarChart extends StatelessWidget {
         barRods: [
           BarChartRodData(
             toY: hours,
-            width: records.length > 14 ? 8 : 16,
+            width: days.length > 14 ? 8 : 16,
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(4),
             ),

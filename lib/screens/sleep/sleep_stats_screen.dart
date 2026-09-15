@@ -77,7 +77,7 @@ class SleepStatsScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   SizedBox(
                     height: 220,
-                    child: SleepBarChart(records: sleep.last30Days),
+                    child: SleepBarChart(days: sleep.last30DaysByDay),
                   ),
                 ],
               ),

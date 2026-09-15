@@ -12,22 +12,26 @@ class SleepTrackerScreen extends ConsumerStatefulWidget {
   const SleepTrackerScreen({super.key});
 
   @override
-  ConsumerState<SleepTrackerScreen> createState() =>
-      _SleepTrackerScreenState();
+  ConsumerState<SleepTrackerScreen> createState() => _SleepTrackerScreenState();
 }
 
 class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      try { ref.read(sleepProvider.notifier).loadRecords(); } catch (_) {}
-      // Auto-sync from HealthKit when sync is enabled
-      final healthSync = ref.read(healthSyncProvider);
-      if (healthSync.syncEnabled && !healthSync.isSyncing) {
-        ref.read(healthSyncProvider.notifier).syncNow();
-      }
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
+  }
+
+  /// Pull HealthKit first, then read back from the database.
+  ///
+  /// autoSync() waits for the stored sync setting before deciding — reading
+  /// `syncEnabled` straight off the provider here raced the SharedPreferences
+  /// load and skipped the sync entirely, which looked like "no sleep data".
+  Future<void> _loadData() async {
+    try {
+      await ref.read(healthSyncProvider.notifier).autoSync();
+      await ref.read(sleepProvider.notifier).loadRecords();
+    } catch (_) {}
   }
 
   @override
@@ -35,8 +39,12 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
     final sleep = ref.watch(sleepProvider);
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
+      // Pushed route with no AppBar: without SafeArea the header
+      // renders underneath the status bar and notch.
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
             // Header
             SliverToBoxAdapter(
               child: Padding(
@@ -44,17 +52,34 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      '수면 트래커',
-                      style: TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                    // This is a pushed route with no AppBar, so it has to
+                    // carry its own way back.
+                    Expanded(
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.arrow_back_rounded),
+                            color: AppTheme.textPrimary,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            tooltip: '뒤로',
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            '수면 트래커',
+                            style: TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     TextButton.icon(
-                      onPressed: () => Navigator.pushNamed(
-                          context, '/sleep-stats'),
+                      onPressed: () =>
+                          Navigator.pushNamed(context, '/sleep-stats'),
                       icon: const Icon(Icons.bar_chart_rounded, size: 18),
                       label: const Text('통계'),
                     ),
@@ -208,8 +233,8 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                                     ? 'Apple Health에서 가져오기'
                                     : 'Health Connect에서 가져오기'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.primary
-                                      .withValues(alpha: 0.3),
+                                  backgroundColor:
+                                      AppTheme.primary.withValues(alpha: 0.3),
                                   foregroundColor: Colors.white,
                                 ),
                               ),
@@ -244,7 +269,7 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                       const SizedBox(height: 16),
                       SizedBox(
                         height: 200,
-                        child: SleepBarChart(records: sleep.last7Days),
+                        child: SleepBarChart(days: sleep.last7DaysByDay),
                       ),
                     ],
                   ),
@@ -327,9 +352,9 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color:
-                                  AppHelpers.getSleepQualityColor(record.quality)
-                                      .withValues(alpha: 0.2),
+                              color: AppHelpers.getSleepQualityColor(
+                                      record.quality)
+                                  .withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Center(
@@ -378,7 +403,8 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                                   child: Icon(
                                     Icons.watch_rounded,
                                     size: 14,
-                                    color: AppTheme.primary.withValues(alpha: 0.7),
+                                    color:
+                                        AppTheme.primary.withValues(alpha: 0.7),
                                   ),
                                 ),
                               Text(
@@ -403,7 +429,8 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
             const SliverToBoxAdapter(
               child: SizedBox(height: 100),
             ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: ref.watch(healthSyncProvider).syncEnabled
           ? FloatingActionButton.small(
@@ -449,8 +476,8 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
           children: [
             Text(
               label,
-              style: const TextStyle(
-                  color: AppTheme.textSecondary, fontSize: 13),
+              style:
+                  const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
             ),
             Text(
               '${hours.toStringAsFixed(1)}시간',
@@ -477,11 +504,11 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
   }
 
   Future<void> _requestHealthSync(BuildContext context) async {
-    final granted = await ref
-        .read(healthSyncProvider.notifier)
-        .toggleSync(true);
+    final granted =
+        await ref.read(healthSyncProvider.notifier).toggleSync(true);
     if (!granted && context.mounted) {
-      final settingsName = Platform.isIOS ? '설정 > 건강 > Change' : '설정 > Health Connect';
+      final settingsName =
+          Platform.isIOS ? '설정 > 건강 > Change' : '설정 > Health Connect';
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -614,8 +641,8 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                   const SizedBox(height: 8),
                   const Text(
                     '수면 품질',
-                    style: TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 14),
+                    style:
+                        TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                   ),
                   const SizedBox(height: 8),
                   Row(

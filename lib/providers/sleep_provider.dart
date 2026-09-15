@@ -85,6 +85,17 @@ class SleepState {
     return days.where((d) => d.date.isAfter(weekAgo)).toList().reversed.toList();
   }
 
+  /// Last 30 days grouped per day, oldest first.
+  List<DailySleep> get last30DaysByDay {
+    final now = DateTime.now();
+    final monthAgo = now.subtract(const Duration(days: 30));
+    return days
+        .where((d) => d.date.isAfter(monthAgo))
+        .toList()
+        .reversed
+        .toList();
+  }
+
   List<SleepRecord> get last30Days {
     final now = DateTime.now();
     final monthAgo = now.subtract(const Duration(days: 30));

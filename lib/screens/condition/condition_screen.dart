@@ -792,7 +792,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
           if (hasData)
             SizedBox(
               height: 160,
-              child: SleepBarChart(records: sleep.last7Days),
+              child: SleepBarChart(days: sleep.last7DaysByDay),
             )
           else
             const SizedBox(
