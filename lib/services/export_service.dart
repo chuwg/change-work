@@ -31,8 +31,7 @@ class ExportService {
     final now = DateTime.now();
     for (int i = 0; i < 12; i++) {
       final date = DateTime(now.year, now.month - i, 1);
-      final monthShifts =
-          await db.getShiftsForMonth(date.year, date.month);
+      final monthShifts = await db.getShiftsForMonth(date.year, date.month);
       allShifts.addAll(monthShifts);
     }
 
@@ -84,8 +83,7 @@ class ExportService {
         final activity = r.activity ?? '';
         final mood = r.mood ?? '';
         final note = _escapeCsv(r.note ?? '');
-        csv.writeln(
-            '$date,$time,${r.energyLevel},$type,$activity,$mood,$note');
+        csv.writeln('$date,$time,${r.energyLevel},$type,$activity,$mood,$note');
       }
       final file = File('${dir.path}/change_energy_$dateStr.csv');
       await file.writeAsString(csv.toString());
@@ -195,9 +193,8 @@ class ExportService {
 
     // Get existing sleep dates
     final existing = await db.getSleepRecords(limit: 1000);
-    final existingDates = existing
-        .map((r) => DateFormat('yyyy-MM-dd').format(r.date))
-        .toSet();
+    final existingDates =
+        existing.map((r) => DateFormat('yyyy-MM-dd').format(r.date)).toSet();
 
     int count = 0;
     for (int i = 1; i < lines.length; i++) {
@@ -256,8 +253,11 @@ class ExportService {
         final date = DateFormat('yyyy-MM-dd').parse(dateStr);
         final timeParts = timeStr.split(':');
         final timestamp = DateTime(
-          date.year, date.month, date.day,
-          int.parse(timeParts[0]), int.parse(timeParts[1]),
+          date.year,
+          date.month,
+          date.day,
+          int.parse(timeParts[0]),
+          int.parse(timeParts[1]),
         );
 
         await db.insertEnergyRecord(EnergyRecord(
@@ -305,11 +305,16 @@ class ExportService {
 
   String _shiftTypeLabelToCode(String label) {
     switch (label) {
-      case '주간': return 'day';
-      case '오후': return 'evening';
-      case '야간': return 'night';
-      case '휴무': return 'off';
-      default: return label; // already in English
+      case '주간':
+        return 'day';
+      case '오후':
+        return 'evening';
+      case '야간':
+        return 'night';
+      case '휴무':
+        return 'off';
+      default:
+        return label; // already in English
     }
   }
 

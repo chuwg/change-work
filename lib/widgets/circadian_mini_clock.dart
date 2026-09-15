@@ -30,7 +30,7 @@ class CircadianMiniClock extends StatelessWidget {
           child: Center(
             child: Text(
               '${score.toInt()}',
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -61,7 +61,7 @@ class CircadianMiniClock extends StatelessWidget {
                 size: 16,
               ),
               const SizedBox(width: 6),
-              const Text(
+              Text(
                 '리듬 점수',
                 style: TextStyle(
                   color: AppTheme.textSecondary,
@@ -76,7 +76,7 @@ class CircadianMiniClock extends StatelessWidget {
             children: [
               Text(
                 '${score.toInt()}',
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.textPrimary,
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -84,7 +84,7 @@ class CircadianMiniClock extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 2),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(bottom: 3),
                 child: Text(
                   '점',

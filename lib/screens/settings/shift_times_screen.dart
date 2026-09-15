@@ -30,8 +30,8 @@ class _ShiftTimesScreenState extends ConsumerState<ShiftTimesScreen> {
     final saved = prefs.getString(AppConstants.customShiftTimesKey);
     if (saved != null) {
       final decoded = jsonDecode(saved) as Map<String, dynamic>;
-      _shiftTimes = decoded.map((k, v) =>
-          MapEntry(k, Map<String, String>.from(v as Map)));
+      _shiftTimes = decoded
+          .map((k, v) => MapEntry(k, Map<String, String>.from(v as Map)));
     } else {
       _shiftTimes = Map.from(AppConstants.defaultShiftTimes)
           .map((k, v) => MapEntry(k, Map<String, String>.from(v)));
@@ -63,7 +63,8 @@ class _ShiftTimesScreenState extends ConsumerState<ShiftTimesScreen> {
 
     // Reschedule all schedule-dependent notifications with the updated times
     // (shift reminders + smart sleep, which depend on shift start times).
-    await NotificationScheduler.rescheduleForSchedule(ref.read(scheduleProvider));
+    await NotificationScheduler.rescheduleForSchedule(
+        ref.read(scheduleProvider));
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -99,7 +100,7 @@ class _ShiftTimesScreenState extends ConsumerState<ShiftTimesScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: ColorScheme.dark(
               primary: AppTheme.primary,
               surface: AppTheme.surfaceDarkElevated,
             ),
@@ -127,7 +128,7 @@ class _ShiftTimesScreenState extends ConsumerState<ShiftTimesScreen> {
         actions: [
           TextButton(
             onPressed: _saveTimes,
-            child: const Text('저장',
+            child: Text('저장',
                 style: TextStyle(color: AppTheme.primary, fontSize: 16)),
           ),
         ],
@@ -137,7 +138,7 @@ class _ShiftTimesScreenState extends ConsumerState<ShiftTimesScreen> {
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                const Text(
+                Text(
                   '각 근무 타입의 시작/종료 시간을 설정하세요.\n건강 가이드가 이 시간을 기준으로 계산됩니다.',
                   style: TextStyle(
                     color: AppTheme.textSecondary,
@@ -213,7 +214,7 @@ class _ShiftTimesScreenState extends ConsumerState<ShiftTimesScreen> {
                   () => _pickTime(type, 'start'),
                 ),
               ),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12),
                 child: Icon(Icons.arrow_forward_rounded,
                     color: AppTheme.textTertiary, size: 18),
@@ -245,13 +246,12 @@ class _ShiftTimesScreenState extends ConsumerState<ShiftTimesScreen> {
           children: [
             Text(
               label,
-              style: const TextStyle(
-                  color: AppTheme.textSecondary, fontSize: 12),
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
             ),
             const SizedBox(height: 4),
             Text(
               time,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.textPrimary,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,

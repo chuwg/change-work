@@ -27,7 +27,7 @@ class SalarySummaryCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(
                   Icons.account_balance_wallet_rounded,
@@ -57,7 +57,7 @@ class SalarySummaryCard extends ConsumerWidget {
                   : salary.isConfigured
                       ? '--'
                       : '설정 필요',
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.textPrimary,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -99,7 +99,7 @@ class SalarySummaryCard extends ConsumerWidget {
         if (value.isNotEmpty)
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 12,
               fontWeight: FontWeight.w600,

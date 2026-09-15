@@ -159,8 +159,7 @@ class SalaryNotifier extends StateNotifier<SalaryState> {
     }
 
     // Overtime: only count hours beyond standard shift hours, not legal 40h/week
-    final standardHours =
-        workingShifts.length * AppConstants.defaultShiftHours;
+    final standardHours = workingShifts.length * AppConstants.defaultShiftHours;
     final overtimeHours = max(0.0, totalWorkHours - standardHours);
 
     // Pay components
@@ -190,9 +189,7 @@ class SalaryNotifier extends StateNotifier<SalaryState> {
         basePay + nightPremium + weekendPremium + overtimePay + fixedTotal;
 
     // Per-type breakdowns
-    final breakdowns = accum.entries
-        .where((e) => e.value.count > 0)
-        .map((e) {
+    final breakdowns = accum.entries.where((e) => e.value.count > 0).map((e) {
       final a = e.value;
       final regularH = a.totalHours - a.nightHours;
       final bp = a.totalHours * effectiveHourlyRate;
@@ -261,10 +258,8 @@ class SalaryNotifier extends StateNotifier<SalaryState> {
   double _calcNightHours(DateTime start, DateTime end) {
     final effectiveEnd =
         end.isAfter(start) ? end : end.add(const Duration(days: 1));
-    final nightStart =
-        DateTime(start.year, start.month, start.day, 22, 0);
-    final nightEnd =
-        DateTime(start.year, start.month, start.day + 1, 6, 0);
+    final nightStart = DateTime(start.year, start.month, start.day, 22, 0);
+    final nightEnd = DateTime(start.year, start.month, start.day + 1, 6, 0);
 
     final overlapStart = start.isAfter(nightStart) ? start : nightStart;
     final overlapEnd =
@@ -275,7 +270,6 @@ class SalaryNotifier extends StateNotifier<SalaryState> {
     }
     return 0.0;
   }
-
 }
 
 class _ShiftAccum {

@@ -66,7 +66,7 @@ class ExportCalendarWidget extends StatelessWidget {
       children: [
         Text(
           '$year년 ${month}월',
-          style: const TextStyle(
+          style: TextStyle(
             color: AppTheme.textPrimary,
             fontSize: 48,
             fontWeight: FontWeight.bold,
@@ -74,7 +74,7 @@ class ExportCalendarWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 16),
-        const Padding(
+        Padding(
           padding: EdgeInsets.only(bottom: 8),
           child: Text(
             '근무 스케줄',
@@ -134,9 +134,8 @@ class ExportCalendarWidget extends StatelessWidget {
     final shiftColor = shift != null
         ? AppHelpers.getShiftColor(shift.type)
         : Colors.transparent;
-    final shortLabel = shift != null
-        ? (_shiftShortLabels[shift.type] ?? '')
-        : '';
+    final shortLabel =
+        shift != null ? (_shiftShortLabels[shift.type] ?? '') : '';
 
     return Container(
       margin: const EdgeInsets.all(3),
@@ -151,7 +150,7 @@ class ExportCalendarWidget extends StatelessWidget {
         children: [
           Text(
             '$day',
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 24,
               fontWeight: FontWeight.w500,
@@ -212,7 +211,7 @@ class ExportCalendarWidget extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 item.$1,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 20,
                   decoration: TextDecoration.none,

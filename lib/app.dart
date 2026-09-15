@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,16 +14,24 @@ import 'services/notification_scheduler.dart';
 import 'providers/schedule_provider.dart';
 import 'providers/health_sync_provider.dart';
 import 'providers/tab_provider.dart';
+import 'providers/theme_provider.dart';
 
 class ChangeApp extends ConsumerWidget {
   const ChangeApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(themeModeProvider);
+    // Publish the palette before anything below builds — AppTheme's static
+    // getters are what the screens read, not Theme.of(context).
+    applyPalette(context, mode);
+
     return MaterialApp(
       title: 'Change',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: mode,
       routes: AppRoutes.routes,
       home: const AppEntryPoint(),
     );
@@ -114,6 +123,23 @@ class _MainShellState extends ConsumerState<MainShell>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _applyDebugInitialTab();
+  }
+
+  /// Debug-only hook for capturing screenshots of a specific tab.
+  ///
+  /// There is no way to script a tap on the simulator, so set
+  /// `flutter.debug_initial_tab` in the app's preferences and relaunch.
+  /// Compiled out of release builds.
+  Future<void> _applyDebugInitialTab() async {
+    if (!kDebugMode) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final tab = prefs.getInt('debug_initial_tab');
+      if (tab != null && tab >= 0 && tab <= AppTab.settings && mounted) {
+        ref.read(tabIndexProvider.notifier).state = tab;
+      }
+    } catch (_) {}
   }
 
   @override
@@ -176,7 +202,8 @@ class _MainShellState extends ConsumerState<MainShell>
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label, int currentIndex) {
+  Widget _buildNavItem(
+      int index, IconData icon, String label, int currentIndex) {
     final isSelected = currentIndex == index;
     return GestureDetector(
       onTap: () => ref.read(tabIndexProvider.notifier).state = index,

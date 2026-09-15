@@ -40,12 +40,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final profile = await DatabaseService.instance.getUserProfile();
     if (profile != null) {
       _nameController.text = profile.name ?? '';
-      _birthYearController.text =
-          profile.birthYear?.toString() ?? '';
-      _heightController.text =
-          profile.heightCm?.toStringAsFixed(0) ?? '';
-      _weightController.text =
-          profile.weightKg?.toStringAsFixed(1) ?? '';
+      _birthYearController.text = profile.birthYear?.toString() ?? '';
+      _heightController.text = profile.heightCm?.toStringAsFixed(0) ?? '';
+      _weightController.text = profile.weightKg?.toStringAsFixed(1) ?? '';
       _selectedGender = profile.gender;
     }
     setState(() => _isLoading = false);
@@ -78,7 +75,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         actions: [
           TextButton(
             onPressed: _saveProfile,
-            child: const Text('저장',
+            child: Text('저장',
                 style: TextStyle(color: AppTheme.primary, fontSize: 16)),
           ),
         ],
@@ -131,8 +128,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         controller: _weightController,
                         hint: '65.0',
                         icon: Icons.monitor_weight_rounded,
-                        keyboardType:
-                            const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                         inputFormatters: [
                           FilteringTextInputFormatter.allow(
                               RegExp(r'^\d{0,3}\.?\d{0,1}')),
@@ -165,7 +162,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             color: AppTheme.textSecondary,
             fontSize: 13,
             fontWeight: FontWeight.w600,
@@ -178,10 +175,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             controller: controller,
             keyboardType: keyboardType,
             inputFormatters: inputFormatters,
-            style: const TextStyle(color: AppTheme.textPrimary, fontSize: 15),
+            style: TextStyle(color: AppTheme.textPrimary, fontSize: 15),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(color: AppTheme.textTertiary),
+              hintStyle: TextStyle(color: AppTheme.textTertiary),
               prefixIcon: Icon(icon, color: AppTheme.primary, size: 20),
               border: InputBorder.none,
               contentPadding:
@@ -198,7 +195,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           '성별',
           style: TextStyle(
             color: AppTheme.textSecondary,
@@ -246,8 +243,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               Text(
                 label,
                 style: TextStyle(
-                  color:
-                      isSelected ? AppTheme.primary : AppTheme.textSecondary,
+                  color: isSelected ? AppTheme.primary : AppTheme.textSecondary,
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
@@ -345,7 +341,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             const SizedBox(width: 8),
             Text(
               _isFetchingHealth ? '가져오는 중...' : 'Apple Health에서 키/체중 가져오기',
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.textPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -402,7 +398,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'BMI',
                   style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                 ),

@@ -403,8 +403,7 @@ class DatabaseService {
 
   Future<List<EnergyRecord>> getEnergyRecordsForDate(DateTime date) async {
     final db = await database;
-    final dateStr =
-        DateTime(date.year, date.month, date.day).toIso8601String();
+    final dateStr = DateTime(date.year, date.month, date.day).toIso8601String();
 
     final maps = await db.query(
       'energy_records',

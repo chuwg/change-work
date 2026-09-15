@@ -64,8 +64,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             Expanded(
               child: PageView(
                 controller: _pageController,
-                onPageChanged: (page) =>
-                    setState(() => _currentPage = page),
+                onPageChanged: (page) => setState(() => _currentPage = page),
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
                   _buildWelcomePage(),
@@ -126,8 +125,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           }
                         }
                       },
-                      child: Text(
-                          _currentPage == _totalPages - 1 ? '시작하기' : '다음'),
+                      child:
+                          Text(_currentPage == _totalPages - 1 ? '시작하기' : '다음'),
                     ),
                   ),
                 ],
@@ -170,7 +169,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ),
           const SizedBox(height: 32),
-          const Text(
+          Text(
             'Change에 오신 걸 환영해요',
             style: TextStyle(
               color: AppTheme.textPrimary,
@@ -179,7 +178,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             '교대근무자를 위한 스마트 스케줄 관리와\n건강 코치가 당신의 건강을 지켜드립니다',
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -213,109 +212,108 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '간단한 정보를 알려주세요',
-            style: TextStyle(
-              color: AppTheme.textPrimary,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            '맞춤 건강 가이드를 위해 사용됩니다\n건너뛰어도 괜찮아요',
-            style: TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 14,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          // Birth year
-          const Text(
-            '출생년도',
-            style: TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Container(
-            decoration: AppTheme.glassCard,
-            child: TextField(
-              controller: _birthYearController,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.done,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(4),
-              ],
-              style:
-                  const TextStyle(color: AppTheme.textPrimary, fontSize: 15),
-              decoration: const InputDecoration(
-                hintText: '예: 1990',
-                hintStyle: TextStyle(color: AppTheme.textTertiary),
-                prefixIcon:
-                    Icon(Icons.cake_rounded, color: AppTheme.primary, size: 20),
-                border: InputBorder.none,
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '간단한 정보를 알려주세요',
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-
-          // Gender
-          const Text(
-            '성별',
-            style: TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+            const SizedBox(height: 8),
+            Text(
+              '맞춤 건강 가이드를 위해 사용됩니다\n건너뛰어도 괜찮아요',
+              style: TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 14,
+                height: 1.4,
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              _buildGenderChip('male', '남성', Icons.male_rounded),
-              const SizedBox(width: 8),
-              _buildGenderChip('female', '여성', Icons.female_rounded),
-              const SizedBox(width: 8),
-              _buildGenderChip('other', '기타', Icons.transgender_rounded),
-            ],
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
-          // Info note
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppTheme.primary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(10),
+            // Birth year
+            Text(
+              '출생년도',
+              style: TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            child: const Row(
-              children: [
-                Icon(Icons.info_outline_rounded,
-                    color: AppTheme.primary, size: 18),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '키, 체중 등 상세 정보는 설정에서 입력할 수 있어요',
-                    style: TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
+            const SizedBox(height: 6),
+            Container(
+              decoration: AppTheme.glassCard,
+              child: TextField(
+                controller: _birthYearController,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(4),
+                ],
+                style: TextStyle(color: AppTheme.textPrimary, fontSize: 15),
+                decoration: InputDecoration(
+                  hintText: '예: 1990',
+                  hintStyle: TextStyle(color: AppTheme.textTertiary),
+                  prefixIcon: Icon(Icons.cake_rounded,
+                      color: AppTheme.primary, size: 20),
+                  border: InputBorder.none,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Gender
+            Text(
+              '성별',
+              style: TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                _buildGenderChip('male', '남성', Icons.male_rounded),
+                const SizedBox(width: 8),
+                _buildGenderChip('female', '여성', Icons.female_rounded),
+                const SizedBox(width: 8),
+                _buildGenderChip('other', '기타', Icons.transgender_rounded),
               ],
             ),
-          ),
-        ],
-      ),
+            const SizedBox(height: 24),
+
+            // Info note
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline_rounded,
+                      color: AppTheme.primary, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '키, 체중 등 상세 정보는 설정에서 입력할 수 있어요',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -340,15 +338,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           child: Column(
             children: [
               Icon(icon,
-                  color:
-                      isSelected ? AppTheme.primary : AppTheme.textSecondary,
+                  color: isSelected ? AppTheme.primary : AppTheme.textSecondary,
                   size: 24),
               const SizedBox(height: 4),
               Text(
                 label,
                 style: TextStyle(
-                  color:
-                      isSelected ? AppTheme.primary : AppTheme.textSecondary,
+                  color: isSelected ? AppTheme.primary : AppTheme.textSecondary,
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
@@ -375,7 +371,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         const SizedBox(height: 8),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             color: AppTheme.textSecondary,
             fontSize: 12,
           ),
@@ -390,7 +386,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '근무 패턴을 선택하세요',
             style: TextStyle(
               color: AppTheme.textPrimary,
@@ -399,7 +395,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             '나중에 설정에서 변경할 수 있어요',
             style: TextStyle(
               color: AppTheme.textSecondary,
@@ -450,7 +446,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                 ),
                               ),
                               if (isSelected)
-                                const Icon(
+                                Icon(
                                   Icons.check_circle_rounded,
                                   color: AppTheme.primary,
                                   size: 20,
@@ -461,7 +457,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             const SizedBox(height: 4),
                             Text(
                               pattern.description!,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: AppTheme.textSecondary,
                                 fontSize: 12,
                               ),
@@ -518,14 +514,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               color: AppTheme.success.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.check_rounded,
               color: AppTheme.success,
               size: 48,
             ),
           ),
           const SizedBox(height: 32),
-          const Text(
+          Text(
             '준비 완료!',
             style: TextStyle(
               color: AppTheme.textPrimary,
@@ -534,7 +530,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Change가 당신의 교대근무 생활을\n더 건강하게 만들어 드리겠습니다',
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -648,7 +644,7 @@ class _FeatureRow extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -656,7 +652,7 @@ class _FeatureRow extends StatelessWidget {
               ),
               Text(
                 description,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 12,
                 ),

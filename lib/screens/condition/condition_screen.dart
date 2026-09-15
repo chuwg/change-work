@@ -95,7 +95,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         '컨디션',
                         style: TextStyle(
                           color: AppTheme.textPrimary,
@@ -106,7 +106,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                       Row(
                         children: [
                           if (healthSync.syncEnabled && healthSync.isSyncing)
-                            const Padding(
+                            Padding(
                               padding: EdgeInsets.only(right: 8),
                               child: SizedBox(
                                 width: 16,
@@ -120,7 +120,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                           IconButton(
                             onPressed: () =>
                                 Navigator.pushNamed(context, '/circadian'),
-                            icon: const Icon(Icons.access_time_rounded,
+                            icon: Icon(Icons.access_time_rounded,
                                 color: AppTheme.textSecondary, size: 22),
                             tooltip: '서카디안 리듬',
                           ),
@@ -167,7 +167,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
 
               // Insights (data-driven tips)
               if (insightTips.isNotEmpty) ...[
-                const SliverToBoxAdapter(
+                SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
                     child: Text(
@@ -403,7 +403,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                   const Icon(Icons.bedtime_rounded,
                       color: Color(0xFF7E57C2), size: 18),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     '오늘의 수면',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
@@ -427,14 +427,12 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                           children: [
                             Icon(Icons.watch_rounded,
                                 size: 10,
-                                color:
-                                    AppTheme.primary.withValues(alpha: 0.7)),
+                                color: AppTheme.primary.withValues(alpha: 0.7)),
                             const SizedBox(width: 3),
                             Text(
                               '자동',
                               style: TextStyle(
-                                color:
-                                    AppTheme.primary.withValues(alpha: 0.7),
+                                color: AppTheme.primary.withValues(alpha: 0.7),
                                 fontSize: 10,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -446,9 +444,8 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                 ],
               ),
               GestureDetector(
-                onTap: () =>
-                    Navigator.pushNamed(context, '/sleep-stats'),
-                child: const Text(
+                onTap: () => Navigator.pushNamed(context, '/sleep-stats'),
+                child: Text(
                   '통계',
                   style: TextStyle(
                     color: AppTheme.primary,
@@ -469,7 +466,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                   children: [
                     Text(
                       AppHelpers.formatDuration(day.totalDuration),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppTheme.textPrimary,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -478,7 +475,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                     if (day.isSplit)
                       Text(
                         '${day.sessions.length}회 나눠 잠',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppTheme.textTertiary,
                           fontSize: 11,
                         ),
@@ -495,8 +492,8 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                       _buildSleepStat(
                           '기상', AppHelpers.formatTime(record.wakeTime)),
                       const SizedBox(width: 16),
-                      _buildSleepStat('품질',
-                          AppHelpers.getSleepQualityLabel(day.quality)),
+                      _buildSleepStat(
+                          '품질', AppHelpers.getSleepQualityLabel(day.quality)),
                     ],
                   ),
                 ),
@@ -505,7 +502,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
           ] else ...[
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
                     '아직 기록이 없어요',
                     style: TextStyle(
@@ -526,7 +523,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                     ),
                   )
                 else
-                  const Text(
+                  Text(
                     '동기화 대기 중',
                     style: TextStyle(
                       color: AppTheme.textTertiary,
@@ -547,11 +544,11 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(color: AppTheme.textTertiary, fontSize: 10),
+          style: TextStyle(color: AppTheme.textTertiary, fontSize: 10),
         ),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             color: AppTheme.textSecondary,
             fontSize: 13,
             fontWeight: FontWeight.w500,
@@ -575,7 +572,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
                   Icon(Icons.bolt_rounded, color: AppTheme.primary, size: 18),
                   SizedBox(width: 8),
@@ -590,9 +587,8 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                 ],
               ),
               GestureDetector(
-                onTap: () =>
-                    Navigator.pushNamed(context, '/energy-stats'),
-                child: const Text(
+                onTap: () => Navigator.pushNamed(context, '/energy-stats'),
+                child: Text(
                   '통계',
                   style: TextStyle(
                     color: AppTheme.primary,
@@ -628,7 +624,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                     children: [
                       Text(
                         AppHelpers.getEnergyLabel(latest.energyLevel),
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppTheme.textPrimary,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -637,7 +633,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                       Text(
                         '${AppHelpers.formatTime(latest.timestamp)} 기록 '
                         '${energy.todayRecords.length > 1 ? "· 평균 ${avg.toStringAsFixed(1)}/5" : ""}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 12,
                         ),
@@ -651,7 +647,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
           ] else ...[
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
                     '오늘의 에너지를 기록해보세요',
                     style: TextStyle(
@@ -689,8 +685,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: AppHelpers.getEnergyColor(level)
-                    .withValues(alpha: 0.15),
+                color: AppHelpers.getEnergyColor(level).withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
@@ -734,15 +729,15 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                 color: AppTheme.primary.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.watch_rounded,
-                  color: AppTheme.primary, size: 20),
+              child:
+                  Icon(Icons.watch_rounded, color: AppTheme.primary, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '건강 데이터 자동 연동',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
@@ -754,7 +749,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                     Platform.isIOS
                         ? 'Apple Watch에서 수면 데이터를 자동으로 가져옵니다'
                         : 'Health Connect에서 수면 데이터를 자동으로 가져옵니다',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 12,
                     ),
@@ -762,7 +757,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded,
+            Icon(Icons.chevron_right_rounded,
                 color: AppTheme.textTertiary, size: 20),
           ],
         ),
@@ -780,7 +775,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '주간 수면 추이',
             style: TextStyle(
               color: AppTheme.textPrimary,
@@ -795,7 +790,7 @@ class _ConditionScreenState extends ConsumerState<ConditionScreen> {
               child: SleepBarChart(days: sleep.last7DaysByDay),
             )
           else
-            const SizedBox(
+            SizedBox(
               height: 80,
               child: Center(
                 child: Text(

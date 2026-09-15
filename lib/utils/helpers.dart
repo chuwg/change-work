@@ -34,6 +34,29 @@ class AppHelpers {
     }
   }
 
+  /// How a shift is named in prose: "주간 근무", but plain "휴무" for a day
+  /// off — "휴무 근무" reads as a contradiction.
+  static String getShiftDisplayName(String shiftType) {
+    if (shiftType == AppConstants.shiftOff) return '휴무';
+    return '${getShiftLabel(shiftType)} 근무';
+  }
+
+  /// One-character label for tight spots like calendar day blocks.
+  static String getShiftShortLabel(String shiftType) {
+    switch (shiftType) {
+      case AppConstants.shiftDay:
+        return '주';
+      case AppConstants.shiftEvening:
+        return '오';
+      case AppConstants.shiftNight:
+        return '야';
+      case AppConstants.shiftOff:
+        return '휴';
+      default:
+        return '-';
+    }
+  }
+
   static Color getShiftColor(String shiftType) {
     switch (shiftType) {
       case AppConstants.shiftDay:

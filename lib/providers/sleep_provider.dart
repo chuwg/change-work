@@ -71,9 +71,7 @@ class SleepState {
   List<SleepRecord> get last7Days {
     final now = DateTime.now();
     final weekAgo = now.subtract(const Duration(days: 7));
-    return records
-        .where((r) => r.date.isAfter(weekAgo))
-        .toList()
+    return records.where((r) => r.date.isAfter(weekAgo)).toList()
       ..sort((a, b) => a.date.compareTo(b.date));
   }
 
@@ -82,7 +80,11 @@ class SleepState {
   List<DailySleep> get last7DaysByDay {
     final now = DateTime.now();
     final weekAgo = now.subtract(const Duration(days: 7));
-    return days.where((d) => d.date.isAfter(weekAgo)).toList().reversed.toList();
+    return days
+        .where((d) => d.date.isAfter(weekAgo))
+        .toList()
+        .reversed
+        .toList();
   }
 
   /// Last 30 days grouped per day, oldest first.
@@ -99,9 +101,7 @@ class SleepState {
   List<SleepRecord> get last30Days {
     final now = DateTime.now();
     final monthAgo = now.subtract(const Duration(days: 30));
-    return records
-        .where((r) => r.date.isAfter(monthAgo))
-        .toList()
+    return records.where((r) => r.date.isAfter(monthAgo)).toList()
       ..sort((a, b) => a.date.compareTo(b.date));
   }
 }
@@ -158,7 +158,6 @@ class SleepNotifier extends StateNotifier<SleepState> {
   }
 }
 
-final sleepProvider =
-    StateNotifierProvider<SleepNotifier, SleepState>((ref) {
+final sleepProvider = StateNotifierProvider<SleepNotifier, SleepState>((ref) {
   return SleepNotifier(DatabaseService.instance);
 });

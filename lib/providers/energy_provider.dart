@@ -53,18 +53,14 @@ class EnergyState {
   List<EnergyRecord> get last7Days {
     final now = DateTime.now();
     final weekAgo = now.subtract(const Duration(days: 7));
-    return records
-        .where((r) => r.date.isAfter(weekAgo))
-        .toList()
+    return records.where((r) => r.date.isAfter(weekAgo)).toList()
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
   }
 
   List<EnergyRecord> get last30Days {
     final now = DateTime.now();
     final monthAgo = now.subtract(const Duration(days: 30));
-    return records
-        .where((r) => r.date.isAfter(monthAgo))
-        .toList()
+    return records.where((r) => r.date.isAfter(monthAgo)).toList()
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
   }
 

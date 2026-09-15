@@ -44,7 +44,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       '에너지 트래커',
                       style: TextStyle(
                         color: AppTheme.textPrimary,
@@ -76,7 +76,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
@@ -180,7 +180,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           '오늘의 에너지 변화',
                           style: TextStyle(
                             color: AppTheme.textPrimary,
@@ -210,7 +210,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         '주간 평균 에너지',
                         style: TextStyle(
                           color: AppTheme.textPrimary,
@@ -241,7 +241,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         '근무별 평균 에너지',
                         style: TextStyle(
                           color: AppTheme.textPrimary,
@@ -262,7 +262,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                           );
                         })
                       else
-                        const Center(
+                        Center(
                           child: Text(
                             '데이터를 모으는 중입니다...',
                             style: TextStyle(color: AppTheme.textSecondary),
@@ -275,7 +275,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
             ),
 
             // Recent records
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
                 child: Text(
@@ -301,8 +301,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                       alignment: Alignment.centerRight,
                       padding: const EdgeInsets.only(right: 20),
                       color: AppTheme.error.withValues(alpha: 0.3),
-                      child: const Icon(Icons.delete_rounded,
-                          color: AppTheme.error),
+                      child: Icon(Icons.delete_rounded, color: AppTheme.error),
                     ),
                     onDismissed: (_) {
                       ref
@@ -342,7 +341,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                                 children: [
                                   Text(
                                     '${AppHelpers.formatDate(record.date)} ${AppHelpers.formatTime(record.timestamp)}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: AppTheme.textPrimary,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w500,
@@ -355,14 +354,14 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                                         Text(
                                           AppHelpers.getActivityLabel(
                                               record.activity!),
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             color: AppTheme.textSecondary,
                                             fontSize: 12,
                                           ),
                                         ),
                                       if (record.activity != null &&
                                           record.mood != null)
-                                        const Text(
+                                        Text(
                                           ' · ',
                                           style: TextStyle(
                                             color: AppTheme.textTertiary,
@@ -372,7 +371,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                                       if (record.mood != null)
                                         Text(
                                           AppHelpers.getMoodLabel(record.mood!),
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             color: AppTheme.textSecondary,
                                             fontSize: 12,
                                           ),
@@ -451,8 +450,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
           children: [
             Text(
               label,
-              style:
-                  const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
             ),
             Text(
               '${avg.toStringAsFixed(1)} / 5',
@@ -501,7 +499,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '에너지 기록',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
@@ -512,7 +510,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                   const SizedBox(height: 20),
 
                   // Energy level selector
-                  const Text(
+                  Text(
                     '에너지 레벨',
                     style:
                         TextStyle(color: AppTheme.textSecondary, fontSize: 14),
@@ -569,7 +567,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                   const SizedBox(height: 20),
 
                   // Activity selector
-                  const Text(
+                  Text(
                     '활동',
                     style:
                         TextStyle(color: AppTheme.textSecondary, fontSize: 14),
@@ -628,7 +626,7 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                   const SizedBox(height: 16),
 
                   // Mood selector
-                  const Text(
+                  Text(
                     '기분',
                     style:
                         TextStyle(color: AppTheme.textSecondary, fontSize: 14),
@@ -689,8 +687,8 @@ class _EnergyTrackerScreenState extends ConsumerState<EnergyTrackerScreen> {
                   // Note field
                   TextField(
                     controller: noteController,
-                    style: const TextStyle(color: AppTheme.textPrimary),
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: AppTheme.textPrimary),
+                    decoration: InputDecoration(
                       hintText: '메모 (선택사항)',
                       prefixIcon: Icon(Icons.note_rounded,
                           color: AppTheme.textTertiary),

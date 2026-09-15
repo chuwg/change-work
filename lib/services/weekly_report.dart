@@ -64,8 +64,7 @@ class WeeklyStats {
     return WeeklyStats(
       sleepDays: sleepDays,
       avgSleepHours: slept / sleepDays.length,
-      avgSleepQuality:
-          _mean(sleepDays.map((d) => d.quality.toDouble())),
+      avgSleepQuality: _mean(sleepDays.map((d) => d.quality.toDouble())),
       avgEnergy: _mean(energy.map((e) => e.energyLevel.toDouble())),
       sleepDebt: (target - slept).clamp(0.0, double.infinity),
       bestSleepDay: ranked.first,

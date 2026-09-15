@@ -66,7 +66,7 @@ class SleepStatsScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '30일 수면 추이',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
@@ -92,7 +92,7 @@ class SleepStatsScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '수면 품질 분포',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
@@ -103,9 +103,8 @@ class SleepStatsScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   ...List.generate(5, (i) {
                     final q = 5 - i;
-                    final count = sleep.records
-                        .where((r) => r.quality == q)
-                        .length;
+                    final count =
+                        sleep.records.where((r) => r.quality == q).length;
                     final percentage = sleep.records.isEmpty
                         ? 0.0
                         : count / sleep.records.length;
@@ -118,8 +117,7 @@ class SleepStatsScreen extends ConsumerWidget {
                             child: Text(
                               AppHelpers.getSleepQualityLabel(q),
                               style: TextStyle(
-                                color:
-                                    AppHelpers.getSleepQualityColor(q),
+                                color: AppHelpers.getSleepQualityColor(q),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -146,7 +144,7 @@ class SleepStatsScreen extends ConsumerWidget {
                             child: Text(
                               '$count',
                               textAlign: TextAlign.right,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: AppTheme.textSecondary,
                                 fontSize: 13,
                               ),
@@ -169,7 +167,7 @@ class SleepStatsScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '근무 유형별 수면 분석',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
@@ -178,7 +176,7 @@ class SleepStatsScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     '각 근무 유형별 평균 수면 시간과 품질을 보여줍니다',
                     style: TextStyle(
                       color: AppTheme.textSecondary,
@@ -210,12 +208,11 @@ class SleepStatsScreen extends ConsumerWidget {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     AppHelpers.getShiftLabel(entry.key),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: AppTheme.textPrimary,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -236,9 +233,8 @@ class SleepStatsScreen extends ConsumerWidget {
                               isGood
                                   ? Icons.check_circle_rounded
                                   : Icons.warning_rounded,
-                              color: isGood
-                                  ? AppTheme.success
-                                  : AppTheme.warning,
+                              color:
+                                  isGood ? AppTheme.success : AppTheme.warning,
                               size: 20,
                             ),
                           ],
@@ -246,7 +242,7 @@ class SleepStatsScreen extends ConsumerWidget {
                       );
                     })
                   else
-                    const Center(
+                    Center(
                       child: Padding(
                         padding: EdgeInsets.all(20),
                         child: Text(
@@ -275,7 +271,7 @@ class SleepStatsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -284,7 +280,7 @@ class SleepStatsScreen extends ConsumerWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textSecondary,
               fontSize: 11,
             ),

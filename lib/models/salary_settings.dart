@@ -47,7 +47,7 @@ class SalarySettings {
   final double monthlySalary;
   final String nightAllowanceType; // 'multiplier' or 'fixed'
   final double nightMultiplier;
-  final double nightFixedAmount;   // 야간 근무 1회당 고정 금액 (fixed 방식)
+  final double nightFixedAmount; // 야간 근무 1회당 고정 금액 (fixed 방식)
   final double weekendMultiplier;
   final double overtimeMultiplier;
   final List<FixedAllowance> fixedAllowances;
@@ -108,8 +108,7 @@ class SalarySettings {
             m['night_allowance_type'] as String? ?? nightAllowanceMultiplier,
         nightMultiplier: (m['night_multiplier'] as num?)?.toDouble() ??
             AppConstants.defaultNightMultiplier,
-        nightFixedAmount:
-            (m['night_fixed_amount'] as num?)?.toDouble() ?? 0.0,
+        nightFixedAmount: (m['night_fixed_amount'] as num?)?.toDouble() ?? 0.0,
         weekendMultiplier: (m['weekend_multiplier'] as num?)?.toDouble() ??
             AppConstants.defaultWeekendMultiplier,
         overtimeMultiplier: (m['overtime_multiplier'] as num?)?.toDouble() ??

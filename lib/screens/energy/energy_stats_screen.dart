@@ -68,7 +68,7 @@ class EnergyStatsScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '30일 에너지 추이',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
@@ -96,7 +96,7 @@ class EnergyStatsScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '에너지 레벨 분포',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
@@ -149,7 +149,7 @@ class EnergyStatsScreen extends ConsumerWidget {
                             child: Text(
                               '$count',
                               textAlign: TextAlign.right,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: AppTheme.textSecondary,
                                 fontSize: 13,
                               ),
@@ -172,7 +172,7 @@ class EnergyStatsScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '근무 유형별 에너지 분석',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
@@ -181,7 +181,7 @@ class EnergyStatsScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     '각 근무 유형별 평균 에너지 레벨을 보여줍니다',
                     style: TextStyle(
                       color: AppTheme.textSecondary,
@@ -217,7 +217,7 @@ class EnergyStatsScreen extends ConsumerWidget {
                                 children: [
                                   Text(
                                     AppHelpers.getShiftLabel(entry.key),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: AppTheme.textPrimary,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -238,9 +238,8 @@ class EnergyStatsScreen extends ConsumerWidget {
                               isGood
                                   ? Icons.check_circle_rounded
                                   : Icons.warning_rounded,
-                              color: isGood
-                                  ? AppTheme.success
-                                  : AppTheme.warning,
+                              color:
+                                  isGood ? AppTheme.success : AppTheme.warning,
                               size: 20,
                             ),
                           ],
@@ -248,7 +247,7 @@ class EnergyStatsScreen extends ConsumerWidget {
                       );
                     })
                   else
-                    const Center(
+                    Center(
                       child: Padding(
                         padding: EdgeInsets.all(20),
                         child: Text(
@@ -270,7 +269,7 @@ class EnergyStatsScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '시간대별 에너지 분석',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
@@ -282,7 +281,7 @@ class EnergyStatsScreen extends ConsumerWidget {
                   if (energy.records.isNotEmpty)
                     ..._buildTimeOfDayAnalysis(energy)
                   else
-                    const Center(
+                    Center(
                       child: Padding(
                         padding: EdgeInsets.all(20),
                         child: Text(
@@ -303,9 +302,7 @@ class EnergyStatsScreen extends ConsumerWidget {
   List<MapEntry<DateTime, double>> _getLast30DaysAverages(EnergyState energy) {
     final now = DateTime.now();
     final monthAgo = now.subtract(const Duration(days: 30));
-    return energy.dailyAverages
-        .where((e) => e.key.isAfter(monthAgo))
-        .toList();
+    return energy.dailyAverages.where((e) => e.key.isAfter(monthAgo)).toList();
   }
 
   List<Widget> _buildTimeOfDayAnalysis(EnergyState energy) {
@@ -350,8 +347,7 @@ class EnergyStatsScreen extends ConsumerWidget {
                 const SizedBox(width: 6),
                 Text(
                   labels[entry.key] ?? entry.key,
-                  style: const TextStyle(
-                      color: AppTheme.textSecondary, fontSize: 13),
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                 ),
                 const Spacer(),
                 Text(
@@ -391,7 +387,7 @@ class EnergyStatsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -400,7 +396,7 @@ class EnergyStatsScreen extends ConsumerWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textSecondary,
               fontSize: 11,
             ),

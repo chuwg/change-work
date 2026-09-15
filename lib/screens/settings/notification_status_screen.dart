@@ -85,11 +85,11 @@ class _NotificationStatusScreenState
       appBar: AppBar(
         backgroundColor: AppTheme.bgDark,
         elevation: 0,
-        title: const Text(
+        title: Text(
           '알림 상태',
           style: TextStyle(color: AppTheme.textPrimary, fontSize: 18),
         ),
-        iconTheme: const IconThemeData(color: AppTheme.textPrimary),
+        iconTheme: IconThemeData(color: AppTheme.textPrimary),
         actions: [
           IconButton(
             onPressed: _loading ? null : _load,
@@ -99,8 +99,7 @@ class _NotificationStatusScreenState
         ],
       ),
       body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.primary))
+          ? Center(child: CircularProgressIndicator(color: AppTheme.primary))
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -153,7 +152,7 @@ class _NotificationStatusScreenState
                   Container(
                     decoration: AppTheme.glassCard,
                     padding: const EdgeInsets.all(20),
-                    child: const Text(
+                    child: Text(
                       '예정된 알림이 없습니다.\n근무를 등록하고 알림 설정을 켜보세요.',
                       style: TextStyle(
                           color: AppTheme.textSecondary, fontSize: 13),
@@ -244,7 +243,7 @@ class _NotificationStatusScreenState
           const SizedBox(height: 8),
           Text(
             body,
-            style: const TextStyle(
+            style: TextStyle(
                 color: AppTheme.textSecondary, fontSize: 13, height: 1.4),
           ),
           const SizedBox(height: 4),
@@ -263,7 +262,7 @@ class _NotificationStatusScreenState
   Widget _sectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         color: AppTheme.textSecondary,
         fontSize: 13,
         fontWeight: FontWeight.w600,
@@ -307,14 +306,13 @@ class _NotificationStatusScreenState
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                      color: AppTheme.textPrimary, fontSize: 14),
+                  style: TextStyle(color: AppTheme.textPrimary, fontSize: 14),
                 ),
                 if (hint != null)
                   Text(
                     hint,
-                    style: const TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 12),
+                    style:
+                        TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                   ),
               ],
             ),
@@ -349,15 +347,15 @@ class _NotificationStatusScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(label,
-                      style: const TextStyle(
-                          color: AppTheme.textPrimary, fontSize: 14)),
+                      style:
+                          TextStyle(color: AppTheme.textPrimary, fontSize: 14)),
                   Text(sublabel,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppTheme.textSecondary, fontSize: 12)),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded,
+            Icon(Icons.chevron_right_rounded,
                 color: AppTheme.textTertiary, size: 20),
           ],
         ),
@@ -391,7 +389,7 @@ class _NotificationStatusScreenState
               children: [
                 Text(
                   _formatWhen(planned.time),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppTheme.textPrimary,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -400,7 +398,7 @@ class _NotificationStatusScreenState
                 const SizedBox(height: 2),
                 Text(
                   planned.body,
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: AppTheme.textSecondary, fontSize: 12, height: 1.3),
                 ),
               ],

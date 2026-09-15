@@ -66,7 +66,7 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                             tooltip: '뒤로',
                           ),
                           const SizedBox(width: 12),
-                          const Text(
+                          Text(
                             '수면 트래커',
                             style: TextStyle(
                               color: AppTheme.textPrimary,
@@ -258,7 +258,7 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         '주간 수면 시간',
                         style: TextStyle(
                           color: AppTheme.textPrimary,
@@ -287,7 +287,7 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         '근무별 평균 수면',
                         style: TextStyle(
                           color: AppTheme.textPrimary,
@@ -308,7 +308,7 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                           );
                         })
                       else
-                        const Center(
+                        Center(
                           child: Text(
                             '데이터를 모으는 중입니다...',
                             style: TextStyle(color: AppTheme.textSecondary),
@@ -324,7 +324,7 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                child: const Text(
+                child: Text(
                   '최근 기록',
                   style: TextStyle(
                     color: AppTheme.textPrimary,
@@ -376,7 +376,7 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                               children: [
                                 Text(
                                   AppHelpers.formatDate(record.date),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: AppTheme.textPrimary,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
@@ -385,7 +385,7 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                                 const SizedBox(height: 2),
                                 Text(
                                   '${AppHelpers.formatTime(record.bedTime)} - ${AppHelpers.formatTime(record.wakeTime)}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: AppTheme.textSecondary,
                                     fontSize: 12,
                                   ),
@@ -409,7 +409,7 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                                 ),
                               Text(
                                 AppHelpers.formatDuration(record.duration),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: AppTheme.textPrimary,
                                   fontWeight: FontWeight.w600,
                                   fontSize: 14,
@@ -476,8 +476,7 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
           children: [
             Text(
               label,
-              style:
-                  const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
             ),
             Text(
               '${hours.toStringAsFixed(1)}시간',
@@ -513,14 +512,14 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: AppTheme.surfaceDarkElevated,
-          title: const Text(
+          title: Text(
             '건강 데이터 권한 필요',
             style: TextStyle(color: AppTheme.textPrimary),
           ),
           content: Text(
             '수면 데이터를 가져오려면 건강 데이터 접근 권한이 필요합니다.\n\n'
             '$settingsName에서 권한을 허용해주세요.',
-            style: const TextStyle(color: AppTheme.textSecondary),
+            style: TextStyle(color: AppTheme.textSecondary),
           ),
           actions: [
             TextButton(
@@ -555,7 +554,7 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '수면 기록',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
@@ -568,9 +567,9 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                   // Bed time picker
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.bedtime_rounded,
-                        color: AppTheme.primary),
-                    title: const Text('취침 시간',
+                    leading:
+                        Icon(Icons.bedtime_rounded, color: AppTheme.primary),
+                    title: Text('취침 시간',
                         style: TextStyle(color: AppTheme.textSecondary)),
                     trailing: TextButton(
                       onPressed: () async {
@@ -592,7 +591,7 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                       },
                       child: Text(
                         AppHelpers.formatTime(bedTime),
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppTheme.textPrimary,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -604,9 +603,9 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                   // Wake time picker
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.wb_sunny_rounded,
-                        color: AppTheme.shiftDay),
-                    title: const Text('기상 시간',
+                    leading:
+                        Icon(Icons.wb_sunny_rounded, color: AppTheme.shiftDay),
+                    title: Text('기상 시간',
                         style: TextStyle(color: AppTheme.textSecondary)),
                     trailing: TextButton(
                       onPressed: () async {
@@ -628,7 +627,7 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
                       },
                       child: Text(
                         AppHelpers.formatTime(wakeTime),
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppTheme.textPrimary,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -639,7 +638,7 @@ class _SleepTrackerScreenState extends ConsumerState<SleepTrackerScreen> {
 
                   // Quality selector
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     '수면 품질',
                     style:
                         TextStyle(color: AppTheme.textSecondary, fontSize: 14),

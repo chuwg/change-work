@@ -116,8 +116,8 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
     // ghosts fed straight back into the notification scheduler.
     final monthStart = DateTime(year, month, 1);
     final monthEnd = DateTime(year, month + 1, 0);
-    shiftMap.removeWhere((key, _) =>
-        !key.isBefore(monthStart) && !key.isAfter(monthEnd));
+    shiftMap.removeWhere(
+        (key, _) => !key.isBefore(monthStart) && !key.isAfter(monthEnd));
     for (final shift in shifts) {
       final key = DateTime(shift.date.year, shift.date.month, shift.date.day);
       shiftMap[key] = shift;

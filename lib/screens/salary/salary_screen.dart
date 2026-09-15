@@ -21,8 +21,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
       final notifier = ref.read(salaryProvider.notifier);
       await notifier.loadSettings();
       final state = ref.read(salaryProvider);
-      await notifier.calculateForMonth(
-          state.selectedYear, state.selectedMonth);
+      await notifier.calculateForMonth(state.selectedYear, state.selectedMonth);
     });
   }
 
@@ -87,8 +86,8 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
 
   Widget _buildMonthNavigator(SalaryState salary) {
     final now = DateTime.now();
-    final isCurrentMonth = salary.selectedYear == now.year &&
-        salary.selectedMonth == now.month;
+    final isCurrentMonth =
+        salary.selectedYear == now.year && salary.selectedMonth == now.month;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -100,7 +99,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
         ),
         Text(
           '${salary.selectedYear}년 ${salary.selectedMonth}월',
-          style: const TextStyle(
+          style: TextStyle(
             color: AppTheme.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -109,15 +108,12 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
         IconButton(
           icon: Icon(
             Icons.chevron_right_rounded,
-            color: isCurrentMonth
-                ? AppTheme.textTertiary
-                : AppTheme.textPrimary,
+            color:
+                isCurrentMonth ? AppTheme.textTertiary : AppTheme.textPrimary,
           ),
-          onPressed:
-              isCurrentMonth
-                  ? null
-                  : () =>
-                      ref.read(salaryProvider.notifier).goToNextMonth(),
+          onPressed: isCurrentMonth
+              ? null
+              : () => ref.read(salaryProvider.notifier).goToNextMonth(),
         ),
       ],
     );
@@ -130,13 +126,13 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
       child: Center(
         child: Column(
           children: [
-            const Icon(
+            Icon(
               Icons.account_balance_wallet_rounded,
               color: AppTheme.textTertiary,
               size: 48,
             ),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               '급여 설정을 먼저 해주세요',
               style: TextStyle(
                 color: AppTheme.textSecondary,
@@ -144,7 +140,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               '시급 또는 월급을 설정하면\n근무 일정에 맞는 예상 급여를 계산합니다',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -208,7 +204,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 15,
               fontWeight: FontWeight.bold,
@@ -217,7 +213,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textSecondary,
               fontSize: 11,
             ),
@@ -234,7 +230,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '근무 현황',
             style: TextStyle(
               color: AppTheme.textPrimary,
@@ -246,16 +242,14 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
           Row(
             children: [
               Expanded(
-                child: _buildInfoItem(
-                    '근무일수', '${calc.workingDays}일'),
+                child: _buildInfoItem('근무일수', '${calc.workingDays}일'),
               ),
               Expanded(
                 child: _buildInfoItem(
                     '총 근무시간', '${calc.totalWorkHours.toStringAsFixed(1)}h'),
               ),
               Expanded(
-                child:
-                    _buildInfoItem('야간 근무', '${calc.nightShifts}회'),
+                child: _buildInfoItem('야간 근무', '${calc.nightShifts}회'),
               ),
             ],
           ),
@@ -263,8 +257,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
           Row(
             children: [
               Expanded(
-                child:
-                    _buildInfoItem('주말 근무', '${calc.weekendDays}일'),
+                child: _buildInfoItem('주말 근무', '${calc.weekendDays}일'),
               ),
               Expanded(
                 child: _buildInfoItem(
@@ -287,7 +280,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             color: AppTheme.textTertiary,
             fontSize: 12,
           ),
@@ -295,7 +288,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             color: AppTheme.textPrimary,
             fontSize: 15,
             fontWeight: FontWeight.w600,
@@ -324,7 +317,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '급여 구성',
             style: TextStyle(
               color: AppTheme.textPrimary,
@@ -370,7 +363,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
                     Expanded(
                       child: Text(
                         item.label,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 14,
                         ),
@@ -378,7 +371,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
                     ),
                     Text(
                       AppHelpers.formatKRWFull(item.amount),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppTheme.textPrimary,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -394,7 +387,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 '합계',
                 style: TextStyle(
                   color: AppTheme.textPrimary,
@@ -404,7 +397,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
               ),
               Text(
                 AppHelpers.formatKRWFull(calc.totalGross),
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.salaryGreen,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -426,7 +419,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '근무 유형별 내역',
             style: TextStyle(
               color: AppTheme.textPrimary,
@@ -461,7 +454,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
                       children: [
                         Text(
                           '${AppHelpers.getShiftLabel(b.shiftType)} ${b.count}회',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppTheme.textPrimary,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -469,7 +462,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
                         ),
                         Text(
                           '${b.totalHours.toStringAsFixed(1)}시간 (야간 ${b.nightHours.toStringAsFixed(1)}h)',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppTheme.textTertiary,
                             fontSize: 12,
                           ),
@@ -479,7 +472,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
                   ),
                   Text(
                     AppHelpers.formatKRWFull(b.total),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.textPrimary,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -501,7 +494,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '고정 수당 내역',
             style: TextStyle(
               color: AppTheme.textPrimary,
@@ -511,8 +504,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
           ),
           const SizedBox(height: 12),
           ...calc.settings.fixedAllowances.map((a) {
-            final total =
-                a.perShift ? a.amount * calc.workingDays : a.amount;
+            final total = a.perShift ? a.amount * calc.workingDays : a.amount;
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Row(
@@ -520,7 +512,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
                   Expanded(
                     child: Text(
                       a.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppTheme.textSecondary,
                         fontSize: 14,
                       ),
@@ -531,7 +523,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
                       padding: const EdgeInsets.only(right: 8),
                       child: Text(
                         '${a.amount.toStringAsFixed(0)}원 x ${calc.workingDays}일',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppTheme.textTertiary,
                           fontSize: 12,
                         ),
@@ -539,7 +531,7 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
                     ),
                   Text(
                     AppHelpers.formatKRWFull(total),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.textPrimary,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,

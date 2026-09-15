@@ -35,7 +35,7 @@ class SleepSummaryCard extends StatelessWidget {
                 size: 16,
               ),
               const SizedBox(width: 6),
-              const Text(
+              Text(
                 '평균 수면',
                 style: TextStyle(
                   color: AppTheme.textSecondary,
@@ -50,7 +50,7 @@ class SleepSummaryCard extends StatelessWidget {
             children: [
               Text(
                 averageHours > 0 ? averageHours.toStringAsFixed(1) : '--',
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.textPrimary,
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -58,7 +58,7 @@ class SleepSummaryCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 2),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(bottom: 3),
                 child: Text(
                   '시간',
@@ -77,9 +77,7 @@ class SleepSummaryCard extends StatelessWidget {
               final filled = i < averageQuality.round();
               return Icon(
                 filled ? Icons.star_rounded : Icons.star_outline_rounded,
-                color: filled
-                    ? const Color(0xFFE8B94A)
-                    : AppTheme.textTertiary,
+                color: filled ? const Color(0xFFE8B94A) : AppTheme.textTertiary,
                 size: 14,
               );
             }),

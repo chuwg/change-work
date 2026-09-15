@@ -49,7 +49,7 @@ class EnergySummaryCard extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    const Text(
+                    Text(
                       '에너지',
                       style: TextStyle(
                         color: AppTheme.textSecondary,
@@ -58,7 +58,7 @@ class EnergySummaryCard extends StatelessWidget {
                     ),
                     if (isEstimated) ...[
                       const SizedBox(width: 4),
-                      const Text(
+                      Text(
                         '추정',
                         style: TextStyle(
                           color: AppTheme.textTertiary,
@@ -81,7 +81,7 @@ class EnergySummaryCard extends StatelessWidget {
                       color: AppTheme.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text(
+                    child: Text(
                       '기록',
                       style: TextStyle(
                         color: AppTheme.primary,
@@ -101,7 +101,7 @@ class EnergySummaryCard extends StatelessWidget {
                 hasData
                     ? AppHelpers.getEnergyLabel(displayLevel.clamp(1, 5))
                     : '--',
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.textPrimary,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -114,7 +114,7 @@ class EnergySummaryCard extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 2),
                   child: Text(
                     AppHelpers.formatTime(latestTime!),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.textTertiary,
                       fontSize: 11,
                     ),

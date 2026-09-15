@@ -265,8 +265,8 @@ class NotificationService {
     while (nextSunday.weekday != DateTime.sunday) {
       nextSunday = nextSunday.add(const Duration(days: 1));
     }
-    var scheduledTime = DateTime(
-        nextSunday.year, nextSunday.month, nextSunday.day, 20, 0);
+    var scheduledTime =
+        DateTime(nextSunday.year, nextSunday.month, nextSunday.day, 20, 0);
     if (!scheduledTime.isAfter(now)) {
       scheduledTime = scheduledTime.add(const Duration(days: 7));
     }

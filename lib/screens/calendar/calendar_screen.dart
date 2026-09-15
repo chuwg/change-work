@@ -50,7 +50,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     '근무 캘린더',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
@@ -62,7 +62,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     children: [
                       IconButton(
                         onPressed: () => _exportMonth(schedule),
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.share_rounded,
                           color: AppTheme.primary,
                           size: 22,
@@ -71,7 +71,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       ),
                       IconButton(
                         onPressed: _showPatternSelector,
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.auto_awesome_rounded,
                           color: AppTheme.primary,
                         ),
@@ -79,7 +79,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       ),
                       IconButton(
                         onPressed: _showAddShiftSheet,
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.add_circle_outline_rounded,
                           color: AppTheme.primary,
                         ),
@@ -131,7 +131,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 _loadMonth();
               },
               locale: 'ko_KR',
-              headerStyle: const HeaderStyle(
+              // Without this the grid stretches to fill the height and the day
+              // blocks render as tall capsules.
+              rowHeight: 54,
+              daysOfWeekHeight: 22,
+              headerStyle: HeaderStyle(
                 formatButtonVisible: false,
                 titleCentered: true,
                 titleTextStyle: TextStyle(
@@ -144,44 +148,31 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 rightChevronIcon:
                     Icon(Icons.chevron_right, color: AppTheme.textSecondary),
               ),
-              daysOfWeekStyle: const DaysOfWeekStyle(
+              daysOfWeekStyle: DaysOfWeekStyle(
                 weekdayStyle:
                     TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-                weekendStyle:
-                    TextStyle(color: AppTheme.accent, fontSize: 12),
+                weekendStyle: TextStyle(color: AppTheme.accent, fontSize: 12),
               ),
               calendarStyle: CalendarStyle(
                 outsideDaysVisible: false,
-                defaultTextStyle:
-                    const TextStyle(color: AppTheme.textPrimary),
-                weekendTextStyle: const TextStyle(color: AppTheme.accent),
-                todayDecoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.3),
-                  shape: BoxShape.circle,
-                ),
-                selectedDecoration: const BoxDecoration(
-                  color: AppTheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                todayTextStyle:
-                    const TextStyle(color: AppTheme.textPrimary),
+                defaultTextStyle: TextStyle(color: AppTheme.textPrimary),
+                weekendTextStyle: TextStyle(color: AppTheme.accent),
+                // Day cells are drawn by calendarBuilders below, so the
+                // built-in circles would only sit behind them.
+                cellMargin: const EdgeInsets.all(3),
               ),
               calendarBuilders: CalendarBuilders(
-                markerBuilder: (context, date, events) {
-                  final shift = schedule.getShiftForDate(date);
-                  if (shift == null) return null;
-                  return Positioned(
-                    bottom: 4,
-                    child: Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: AppHelpers.getShiftColor(shift.type),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  );
-                },
+                // The shift used to be a 6dp dot under the date, which is far
+                // too small to tell four colours apart at a glance. Each day is
+                // now a filled block in its shift colour.
+                defaultBuilder: (context, date, _) =>
+                    _buildDayCell(schedule, date),
+                outsideBuilder: (context, date, _) =>
+                    _buildDayCell(schedule, date, outside: true),
+                todayBuilder: (context, date, _) =>
+                    _buildDayCell(schedule, date, isToday: true),
+                selectedBuilder: (context, date, _) =>
+                    _buildDayCell(schedule, date, isSelected: true),
               ),
             ),
 
@@ -197,22 +188,85 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
+  /// A single calendar day, filled with its shift colour.
+  ///
+  /// Today and the selected day are marked with a ring rather than a different
+  /// fill, so the shift colour stays readable in every state.
+  Widget _buildDayCell(
+    ScheduleState schedule,
+    DateTime date, {
+    bool isToday = false,
+    bool isSelected = false,
+    bool outside = false,
+  }) {
+    final shift = schedule.getShiftForDate(date);
+    final color = shift != null ? AppHelpers.getShiftColor(shift.type) : null;
+    final opacity = outside ? 0.25 : 0.85;
+
+    return Container(
+      margin: const EdgeInsets.all(2),
+      // Fill the column: with loose constraints the container would shrink to
+      // the width of the day number and render as a narrow capsule.
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        color: color?.withValues(alpha: opacity) ??
+            AppTheme.textTertiary.withValues(alpha: outside ? 0.05 : 0.10),
+        borderRadius: BorderRadius.circular(8),
+        border: isSelected
+            ? Border.all(color: AppTheme.textPrimary, width: 2)
+            : isToday
+                ? Border.all(color: AppTheme.primary, width: 2)
+                : null,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            '${date.day}',
+            style: TextStyle(
+              // Dark text on the saturated fills; the palette is light enough
+              // that white would wash out.
+              color: color != null && !outside
+                  ? const Color(0xFF241F1B)
+                  : AppTheme.textSecondary.withValues(alpha: outside ? 0.5 : 1),
+              fontSize: 14,
+              fontWeight:
+                  isToday || isSelected ? FontWeight.bold : FontWeight.w600,
+              height: 1.1,
+            ),
+          ),
+          if (shift != null && !outside)
+            Text(
+              AppHelpers.getShiftShortLabel(shift.type),
+              style: const TextStyle(
+                color: Color(0xFF241F1B),
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                height: 1.2,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLegend(String label, Color color) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 8,
-          height: 8,
+          width: 14,
+          height: 14,
           decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
+            color: color.withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(4),
           ),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: 5),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             color: AppTheme.textSecondary,
             fontSize: 11,
           ),
@@ -223,7 +277,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   Widget _buildSelectedDayDetail(ScheduleState schedule) {
     if (_selectedDay == null) {
-      return const Center(
+      return Center(
         child: Text(
           '날짜를 선택하세요',
           style: TextStyle(color: AppTheme.textSecondary),
@@ -240,7 +294,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         children: [
           Text(
             AppHelpers.formatDate(_selectedDay!),
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textSecondary,
               fontSize: 14,
             ),
@@ -272,10 +326,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${AppHelpers.getShiftLabel(shift.type)} 근무',
+                          AppHelpers.getShiftDisplayName(shift.type),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppTheme.textPrimary,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -286,7 +340,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           const SizedBox(height: 4),
                           Text(
                             '${shift.startTime} - ${shift.endTime}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppTheme.textSecondary,
                               fontSize: 14,
                             ),
@@ -296,9 +350,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () =>
-                        _showEditShiftSheet(shift),
-                    icon: const Icon(
+                    onPressed: () => _showEditShiftSheet(shift),
+                    icon: Icon(
                       Icons.edit_rounded,
                       color: AppTheme.textSecondary,
                       size: 20,
@@ -314,13 +367,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               child: Center(
                 child: Column(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.event_available_rounded,
                       color: AppTheme.textTertiary,
                       size: 32,
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       '등록된 근무가 없습니다',
                       style: TextStyle(color: AppTheme.textSecondary),
                     ),
@@ -377,7 +430,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 '교대 패턴 선택',
                 style: TextStyle(
                   color: AppTheme.textPrimary,
@@ -386,7 +439,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 '패턴을 선택하면 3개월치 스케줄이 자동 생성됩니다',
                 style: TextStyle(
                   color: AppTheme.textSecondary,
@@ -399,14 +452,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   contentPadding: EdgeInsets.zero,
                   title: Text(
                     pattern.name,
-                    style: const TextStyle(color: AppTheme.textPrimary),
+                    style: TextStyle(color: AppTheme.textPrimary),
                   ),
                   subtitle: Text(
                     pattern.description ?? '',
-                    style: const TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 12),
+                    style:
+                        TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                   ),
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.chevron_right_rounded,
                     color: AppTheme.textTertiary,
                   ),
@@ -457,7 +510,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 _selectedDay != null
                     ? '${AppHelpers.formatDate(_selectedDay!)} 근무 추가'
                     : '근무 추가',
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -490,9 +543,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         onTap: () {
           Navigator.pop(context);
           if (_selectedDay != null) {
-            ref
-                .read(scheduleProvider.notifier)
-                .addShift(_selectedDay!, type);
+            ref.read(scheduleProvider.notifier).addShift(_selectedDay!, type);
           }
         },
         child: Container(
@@ -538,7 +589,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 '근무 수정',
                 style: TextStyle(
                   color: AppTheme.textPrimary,
@@ -562,13 +613,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               TextButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
-                  ref
-                      .read(scheduleProvider.notifier)
-                      .removeShift(shift.date);
+                  ref.read(scheduleProvider.notifier).removeShift(shift.date);
                 },
-                icon: const Icon(Icons.delete_outline_rounded,
-                    color: AppTheme.error),
-                label: const Text(
+                icon: Icon(Icons.delete_outline_rounded, color: AppTheme.error),
+                label: Text(
                   '근무 삭제',
                   style: TextStyle(color: AppTheme.error),
                 ),

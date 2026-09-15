@@ -70,7 +70,7 @@ class CircadianScreen extends ConsumerWidget {
                         const SizedBox(height: 4),
                         Text(
                           '${health.circadianScore.toInt()}점',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppTheme.textSecondary,
                             fontSize: 13,
                           ),
@@ -91,7 +91,7 @@ class CircadianScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '서카디안 건강 점수',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
@@ -114,7 +114,7 @@ class CircadianScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     _getScoreMessage(health.circadianScore),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 13,
                     ),
@@ -139,7 +139,7 @@ class CircadianScreen extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      const Text(
+                      Text(
                         '권장 시간표',
                         style: TextStyle(
                           color: AppTheme.textPrimary,
@@ -157,7 +157,7 @@ class CircadianScreen extends ConsumerWidget {
                         ),
                         child: Text(
                           '${shiftSchedule.startTimeStr}~${shiftSchedule.endTimeStr}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppTheme.primary,
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
@@ -167,7 +167,7 @@ class CircadianScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  const Text(
+                  Text(
                     '실제 근무 시간 기반 맞춤 가이드',
                     style: TextStyle(
                       color: AppTheme.textSecondary,
@@ -224,7 +224,7 @@ class CircadianScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '24시간 리듬 가이드',
                     style: TextStyle(
                       color: AppTheme.textPrimary,
@@ -233,8 +233,8 @@ class CircadianScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  ..._buildDynamicPhaseTimeline(healthService, shiftType,
-                      shiftSchedule),
+                  ..._buildDynamicPhaseTimeline(
+                      healthService, shiftType, shiftSchedule),
                 ],
               ),
             ),
@@ -279,7 +279,7 @@ class CircadianScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '최근 7일 수면 분석',
             style: TextStyle(
               color: AppTheme.textPrimary,
@@ -346,7 +346,7 @@ class CircadianScreen extends ConsumerWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textSecondary,
               fontSize: 11,
             ),
@@ -356,8 +356,7 @@ class CircadianScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTimeRow(
-      IconData icon, String label, String time, Color color) {
+  Widget _buildTimeRow(IconData icon, String label, String time, Color color) {
     return Row(
       children: [
         Container(
@@ -372,8 +371,7 @@ class CircadianScreen extends ConsumerWidget {
         const SizedBox(width: 12),
         Text(
           label,
-          style: const TextStyle(
-              color: AppTheme.textSecondary, fontSize: 14),
+          style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
         ),
         const Spacer(),
         Text(
@@ -399,8 +397,7 @@ class CircadianScreen extends ConsumerWidget {
     // Merge consecutive hours with the same phase into ranges
     final merged = <_PhaseInfo>[];
     int rangeStart = 0;
-    CircadianPhase currentPhase =
-        hourPhases[0]['phase'] as CircadianPhase;
+    CircadianPhase currentPhase = hourPhases[0]['phase'] as CircadianPhase;
 
     for (int i = 1; i <= 24; i++) {
       final phase =
@@ -435,7 +432,7 @@ class CircadianScreen extends ConsumerWidget {
               width: 100,
               child: Text(
                 p.timeRange,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 12,
                   fontFamily: 'monospace',
@@ -622,7 +619,7 @@ class CircadianClockPainter extends CustomPainter {
       final textPainter = TextPainter(
         text: TextSpan(
           text: i.toString().padLeft(2, '0'),
-          style: const TextStyle(
+          style: TextStyle(
             color: AppTheme.textSecondary,
             fontSize: 10,
           ),
@@ -632,8 +629,7 @@ class CircadianClockPainter extends CustomPainter {
 
       textPainter.paint(
         canvas,
-        Offset(pos.dx - textPainter.width / 2,
-            pos.dy - textPainter.height / 2),
+        Offset(pos.dx - textPainter.width / 2, pos.dy - textPainter.height / 2),
       );
     }
   }
@@ -649,8 +645,7 @@ class CircadianClockPainter extends CustomPainter {
     // Merge consecutive hours with same phase
     final segments = <_ClockSegment>[];
     int rangeStart = 0;
-    CircadianPhase currentPhase =
-        hourPhases[0]['phase'] as CircadianPhase;
+    CircadianPhase currentPhase = hourPhases[0]['phase'] as CircadianPhase;
 
     for (int i = 1; i <= 24; i++) {
       final phase =

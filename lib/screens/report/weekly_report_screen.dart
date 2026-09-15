@@ -6,6 +6,8 @@ import '../../providers/sleep_provider.dart';
 import '../../providers/energy_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../services/weekly_report.dart';
+import '../../models/energy_record.dart';
+import '../../services/pattern_insights.dart';
 import '../../providers/health_sync_provider.dart';
 import '../../utils/helpers.dart';
 
@@ -60,7 +62,7 @@ class WeeklyReportScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
+        title: Text(
           '주간 리포트',
           style: TextStyle(
             color: AppTheme.textPrimary,
@@ -69,7 +71,7 @@ class WeeklyReportScreen extends ConsumerWidget {
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded,
+          icon: Icon(Icons.arrow_back_ios_rounded,
               color: AppTheme.textPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
@@ -125,10 +127,14 @@ class WeeklyReportScreen extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildShiftCount('주간', dayCount, AppHelpers.getShiftColor('day')),
-                _buildShiftCount('오후', eveningCount, AppHelpers.getShiftColor('evening')),
-                _buildShiftCount('야간', nightCount, AppHelpers.getShiftColor('night')),
-                _buildShiftCount('휴무', offCount, AppHelpers.getShiftColor('off')),
+                _buildShiftCount(
+                    '주간', dayCount, AppHelpers.getShiftColor('day')),
+                _buildShiftCount(
+                    '오후', eveningCount, AppHelpers.getShiftColor('evening')),
+                _buildShiftCount(
+                    '야간', nightCount, AppHelpers.getShiftColor('night')),
+                _buildShiftCount(
+                    '휴무', offCount, AppHelpers.getShiftColor('off')),
               ],
             ),
           ),
@@ -173,9 +179,7 @@ class WeeklyReportScreen extends ConsumerWidget {
                         sleepDebt > 0
                             ? '${sleepDebt.toStringAsFixed(1)}h'
                             : '없음',
-                        sleepDebt <= 3
-                            ? AppTheme.success
-                            : AppTheme.error,
+                        sleepDebt <= 3 ? AppTheme.success : AppTheme.error,
                       ),
                     ),
                   ],
@@ -201,12 +205,20 @@ class WeeklyReportScreen extends ConsumerWidget {
                             sideTitles: SideTitles(
                               showTitles: true,
                               getTitlesWidget: (value, meta) {
-                                const days = ['월', '화', '수', '목', '금', '토', '일'];
+                                const days = [
+                                  '월',
+                                  '화',
+                                  '수',
+                                  '목',
+                                  '금',
+                                  '토',
+                                  '일'
+                                ];
                                 final idx = value.toInt();
                                 if (idx < 0 || idx >= 7) return const Text('');
                                 return Text(
                                   days[idx],
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: AppTheme.textTertiary,
                                     fontSize: 11,
                                   ),
@@ -264,9 +276,7 @@ class WeeklyReportScreen extends ConsumerWidget {
                         avgEnergy > 0
                             ? '${avgEnergy.toStringAsFixed(1)}/5'
                             : '--',
-                        avgEnergy >= 3
-                            ? AppTheme.success
-                            : AppTheme.warning,
+                        avgEnergy >= 3 ? AppTheme.success : AppTheme.warning,
                       ),
                     ),
                     Expanded(
@@ -309,7 +319,7 @@ class WeeklyReportScreen extends ConsumerWidget {
                           const SizedBox(width: 8),
                           Text(
                             '$label 평균 에너지',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppTheme.textSecondary,
                               fontSize: 13,
                             ),
@@ -317,7 +327,7 @@ class WeeklyReportScreen extends ConsumerWidget {
                           const Spacer(),
                           Text(
                             '${e.value.toStringAsFixed(1)}/5',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppTheme.textPrimary,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -338,11 +348,11 @@ class WeeklyReportScreen extends ConsumerWidget {
           _buildSectionTitle('이번 주 인사이트'),
           const SizedBox(height: 8),
           ..._buildInsights(
-            avgSleepHours: avgSleepHours,
-            sleepDebt: sleepDebt,
+            stats: stats,
+            schedule: schedule,
+            energy: weeklyEnergy,
             avgEnergy: avgEnergy,
             nightCount: nightCount,
-            weeklySleep: weeklySleep,
           ),
 
           const SizedBox(height: 40),
@@ -354,7 +364,7 @@ class WeeklyReportScreen extends ConsumerWidget {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         color: AppTheme.textPrimary,
         fontSize: 16,
         fontWeight: FontWeight.w600,
@@ -386,7 +396,7 @@ class WeeklyReportScreen extends ConsumerWidget {
         const SizedBox(height: 6),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             color: AppTheme.textSecondary,
             fontSize: 12,
           ),
@@ -409,7 +419,7 @@ class WeeklyReportScreen extends ConsumerWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             color: AppTheme.textSecondary,
             fontSize: 12,
           ),
@@ -467,7 +477,8 @@ class WeeklyReportScreen extends ConsumerWidget {
               toY: hours > 0 ? hours : 0.3,
               color: color,
               width: 20,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(6)),
             ),
           ],
         ),
@@ -477,67 +488,69 @@ class WeeklyReportScreen extends ConsumerWidget {
   }
 
   List<Widget> _buildInsights({
-    required double avgSleepHours,
-    required double sleepDebt,
+    required WeeklyStats stats,
+    required ScheduleState schedule,
+    required List<EnergyRecord> energy,
     required double avgEnergy,
     required int nightCount,
-    required List weeklySleep,
   }) {
-    final insights = <Widget>[];
+    // Compare the week against the shifts that produced it rather than
+    // restating the weekly average back at the user.
+    final found = PatternInsights.weekly(
+      sleepDays: stats.sleepDays,
+      shiftFor: schedule.getShiftForDate,
+      energy: energy,
+      sleepDebt: stats.sleepDebt,
+    );
 
-    if (sleepDebt > 5) {
-      insights.add(_insightCard(
-        Icons.warning_rounded,
-        AppTheme.error,
-        '수면 부채 경고',
-        '이번 주 수면 부채가 ${sleepDebt.toStringAsFixed(1)}시간이에요. 휴무일에 충분한 수면으로 회복하세요.',
-      ));
-    } else if (sleepDebt > 2) {
-      insights.add(_insightCard(
-        Icons.info_rounded,
-        AppTheme.warning,
-        '수면 부채 주의',
-        '약간의 수면 부채(${sleepDebt.toStringAsFixed(1)}h)가 있어요. 오늘 30분 일찍 잠들어 보세요.',
-      ));
-    }
+    final cards = <Widget>[
+      for (final insight in found)
+        _insightCard(
+          switch (insight.tone) {
+            InsightTone.good => Icons.check_circle_rounded,
+            InsightTone.caution => Icons.info_rounded,
+            InsightTone.warn => Icons.warning_amber_rounded,
+          },
+          switch (insight.tone) {
+            InsightTone.good => AppTheme.success,
+            InsightTone.caution => AppTheme.info,
+            InsightTone.warn => AppTheme.warning,
+          },
+          insight.title,
+          insight.body,
+        ),
+    ];
 
     if (nightCount >= 3) {
-      insights.add(_insightCard(
+      cards.add(_insightCard(
         Icons.nightlight_round,
-        const Color(0xFF8B7EC8),
+        AppTheme.shiftNight,
         '야간근무 집중 주간',
-        '야간 $nightCount일, 낮잠과 카페인 타이밍에 주의하세요. 휴무 전날은 점진적으로 수면 시간을 조정하세요.',
+        '야간 $nightCount일이에요. 근무 전 90분 이내 낮잠과 '
+            '근무 시작 전에만 카페인을 쓰는 원칙을 지켜보세요.',
       ));
     }
 
     if (avgEnergy > 0 && avgEnergy < 2.5) {
-      insights.add(_insightCard(
-        Icons.battery_1_bar_rounded,
+      cards.add(_insightCard(
+        Icons.battery_alert_rounded,
         AppTheme.error,
-        '에너지 저하 경고',
-        '이번 주 평균 에너지가 낮아요. 수면 패턴과 식사 시간을 점검해보세요.',
+        '에너지가 계속 낮아요',
+        '이번 주 평균 ${avgEnergy.toStringAsFixed(1)}점이에요. '
+            '수면 시간보다 수면 시각이 흔들리는 것이 원인인 경우가 많습니다.',
       ));
     }
 
-    if (avgSleepHours >= 7 && avgEnergy >= 3.5) {
-      insights.add(_insightCard(
-        Icons.thumb_up_rounded,
-        AppTheme.success,
-        '좋은 한 주였어요!',
-        '수면과 에너지 모두 양호합니다. 이 패턴을 유지하세요!',
+    if (cards.isEmpty) {
+      cards.add(_insightCard(
+        Icons.insights_rounded,
+        AppTheme.textTertiary,
+        '아직 분석할 데이터가 부족해요',
+        '수면과 에너지가 며칠 더 쌓이면 근무 유형별로 비교해드릴게요.',
       ));
     }
 
-    if (insights.isEmpty) {
-      insights.add(_insightCard(
-        Icons.lightbulb_rounded,
-        AppTheme.primary,
-        '데이터를 더 쌓아보세요',
-        '수면과 에너지를 꾸준히 기록하면 더 정확한 분석을 받을 수 있어요.',
-      ));
-    }
-
-    return insights;
+    return cards;
   }
 
   Widget _insightCard(
@@ -570,7 +583,7 @@ class WeeklyReportScreen extends ConsumerWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.textPrimary,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -579,7 +592,7 @@ class WeeklyReportScreen extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     message,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 13,
                       height: 1.5,

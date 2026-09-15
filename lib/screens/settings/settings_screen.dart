@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
 import '../../providers/health_sync_provider.dart';
 import '../../providers/schedule_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../providers/sleep_provider.dart';
 import '../../models/user_profile.dart';
 import '../../services/database_service.dart';
@@ -66,34 +67,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     await prefs.setBool(AppConstants.sleepReminderKey, value);
     setState(() => _sleepReminder = value);
     // Single source of truth: cancels stale slots then reschedules per prefs.
-    await NotificationScheduler.rescheduleForSchedule(ref.read(scheduleProvider));
+    await NotificationScheduler.rescheduleForSchedule(
+        ref.read(scheduleProvider));
   }
 
   Future<void> _saveShiftReminder(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(AppConstants.shiftReminderKey, value);
     setState(() => _shiftReminder = value);
-    await NotificationScheduler.rescheduleForSchedule(ref.read(scheduleProvider));
+    await NotificationScheduler.rescheduleForSchedule(
+        ref.read(scheduleProvider));
   }
 
   Future<void> _pickCommuteMinutes() async {
-    final controller =
-        TextEditingController(text: _reminderMinutes.toString());
+    final controller = TextEditingController(text: _reminderMinutes.toString());
     final result = await showDialog<int>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.surfaceDarkElevated,
-        title: const Text(
+        title: Text(
           '이동 시간 설정',
           style: TextStyle(color: AppTheme.textPrimary),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               '근무지까지 이동하는 데 걸리는 시간을 입력하세요.\n출발 알림이 이 시간에 맞춰 울립니다.',
-              style:
-                  TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 20),
             TextField(
@@ -101,15 +102,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               keyboardType: TextInputType.number,
               autofocus: true,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.textPrimary,
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 suffixText: '분',
-                suffixStyle: TextStyle(
-                    color: AppTheme.textSecondary, fontSize: 18),
+                suffixStyle:
+                    TextStyle(color: AppTheme.textSecondary, fontSize: 18),
               ),
             ),
           ],
@@ -117,8 +118,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('취소',
-                style: TextStyle(color: AppTheme.textSecondary)),
+            child: Text('취소', style: TextStyle(color: AppTheme.textSecondary)),
           ),
           TextButton(
             onPressed: () {
@@ -127,8 +127,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Navigator.pop(ctx, val);
               }
             },
-            child: const Text('확인',
-                style: TextStyle(color: AppTheme.primary)),
+            child: Text('확인', style: TextStyle(color: AppTheme.primary)),
           ),
         ],
       ),
@@ -176,7 +175,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: ColorScheme.dark(
               primary: AppTheme.primary,
               surface: AppTheme.surfaceDarkElevated,
             ),
@@ -208,7 +207,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            const Text(
+            Text(
               '설정',
               style: TextStyle(
                 color: AppTheme.textPrimary,
@@ -223,62 +222,61 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () async {
                 final result = await Navigator.push<UserProfile>(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const ProfileEditScreen()),
+                  MaterialPageRoute(builder: (_) => const ProfileEditScreen()),
                 );
                 if (result != null) {
                   setState(() => _profile = result);
                 }
               },
               child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: AppTheme.glassCard,
-              child: Row(
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      gradient: AppTheme.primaryGradient,
-                      borderRadius: BorderRadius.circular(16),
+                padding: const EdgeInsets.all(20),
+                decoration: AppTheme.glassCard,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.primaryGradient,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.person_rounded,
+                        color: Colors.white,
+                        size: 28,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.person_rounded,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _profile?.name ?? '교대근무자',
-                          style: const TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _profile?.name ?? '교대근무자',
+                            style: TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          '프로필 편집',
-                          style: TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 13,
+                          const SizedBox(height: 2),
+                          Text(
+                            '프로필 편집',
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 13,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const Icon(
-                    Icons.chevron_right_rounded,
-                    color: AppTheme.textTertiary,
-                  ),
-                ],
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppTheme.textTertiary,
+                    ),
+                  ],
+                ),
               ),
-            ),
             ),
 
             const SizedBox(height: 24),
@@ -295,8 +293,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (_) => const ShiftTimesScreen()),
+                    MaterialPageRoute(builder: (_) => const ShiftTimesScreen()),
                   );
                 },
               ),
@@ -315,19 +312,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     icon: Icons.account_balance_wallet_rounded,
                     title: '급여 설정',
                     subtitle: '시급/월급 및 수당 설정',
-                    onTap: () => Navigator.pushNamed(
-                        context, AppRoutes.salarySettings),
+                    onTap: () =>
+                        Navigator.pushNamed(context, AppRoutes.salarySettings),
                   ),
                   const Divider(height: 1, indent: 56),
                   _buildActionTile(
                     icon: Icons.bar_chart_rounded,
                     title: '급여 내역',
                     subtitle: '월별 예상 급여 및 수당 내역',
-                    onTap: () => Navigator.pushNamed(
-                        context, AppRoutes.salary),
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.salary),
                   ),
                 ],
               ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Appearance
+            _buildSectionHeader('화면'),
+            const SizedBox(height: 8),
+            Container(
+              decoration: AppTheme.glassCard,
+              child: _buildThemeSelector(),
             ),
 
             const SizedBox(height: 24),
@@ -400,11 +406,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 color: AppTheme.primary.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(Icons.access_time_rounded,
+                              child: Icon(Icons.access_time_rounded,
                                   color: AppTheme.primary, size: 18),
                             ),
                             const SizedBox(width: 12),
-                            const Expanded(
+                            Expanded(
                               child: Text(
                                 '알림 시간',
                                 style: TextStyle(
@@ -414,14 +420,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             Text(
                               '${_motivationHour.toString().padLeft(2, '0')}:'
                               '${_motivationMinute.toString().padLeft(2, '0')}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: AppTheme.primary,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(Icons.chevron_right_rounded,
+                            Icon(Icons.chevron_right_rounded,
                                 color: AppTheme.textTertiary, size: 18),
                           ],
                         ),
@@ -447,11 +453,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         color: AppTheme.primary.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.directions_walk_rounded,
+                      child: Icon(Icons.directions_walk_rounded,
                           color: AppTheme.primary, size: 18),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -471,14 +477,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     Text(
                       '$_reminderMinutes분',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppTheme.primary,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(Icons.chevron_right_rounded,
+                    Icon(Icons.chevron_right_rounded,
                         color: AppTheme.textTertiary, size: 18),
                   ],
                 ),
@@ -514,8 +520,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       } catch (_) {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('내보내기 중 오류가 발생했습니다')),
+                            const SnackBar(content: Text('내보내기 중 오류가 발생했습니다')),
                           );
                         }
                       }
@@ -544,15 +549,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           );
                           // Reload providers
                           final now = DateTime.now();
-                          ref.read(scheduleProvider.notifier)
+                          ref
+                              .read(scheduleProvider.notifier)
                               .loadShiftsForMonth(now.year, now.month);
                           ref.read(sleepProvider.notifier).loadRecords();
                         }
                       } catch (_) {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('가져오기 중 오류가 발생했습니다')),
+                            const SnackBar(content: Text('가져오기 중 오류가 발생했습니다')),
                           );
                         }
                       }
@@ -591,14 +596,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           color: AppTheme.primary.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.code_rounded,
                           color: AppTheme.primary,
                           size: 22,
                         ),
                       ),
                       const SizedBox(width: 16),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -621,7 +626,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ],
                         ),
                       ),
-                      const Icon(
+                      Icon(
                         Icons.open_in_new_rounded,
                         color: AppTheme.textTertiary,
                         size: 18,
@@ -713,7 +718,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
-                  const Icon(Icons.schedule_rounded,
+                  Icon(Icons.schedule_rounded,
                       color: AppTheme.textTertiary, size: 20),
                   const SizedBox(width: 12),
                   Expanded(
@@ -721,7 +726,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       healthSync.lastSyncAt != null
                           ? '마지막 동기화: ${DateFormat('MM/dd HH:mm').format(healthSync.lastSyncAt!)}'
                           : '아직 동기화되지 않음',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppTheme.textSecondary,
                         fontSize: 13,
                       ),
@@ -747,10 +752,79 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  Widget _buildThemeSelector() {
+    final mode = ref.watch(themeModeProvider);
+    const options = [
+      (ThemeMode.system, '시스템', Icons.brightness_auto_rounded),
+      (ThemeMode.light, '라이트', Icons.light_mode_rounded),
+      (ThemeMode.dark, '다크', Icons.dark_mode_rounded),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Icon(Icons.palette_rounded, color: AppTheme.primary, size: 20),
+          const SizedBox(width: 12),
+          Text('테마',
+              style: TextStyle(color: AppTheme.textPrimary, fontSize: 14)),
+          const Spacer(),
+          for (final (value, label, icon) in options)
+            Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: GestureDetector(
+                onTap: () =>
+                    ref.read(themeModeProvider.notifier).setMode(value),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: mode == value
+                        ? AppTheme.primary.withValues(alpha: 0.18)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: mode == value
+                          ? AppTheme.primary.withValues(alpha: 0.5)
+                          : AppTheme.textTertiary.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(icon,
+                          size: 15,
+                          color: mode == value
+                              ? AppTheme.primary
+                              : AppTheme.textTertiary),
+                      const SizedBox(width: 4),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: mode == value
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                          color: mode == value
+                              ? AppTheme.primary
+                              : AppTheme.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         color: AppTheme.textSecondary,
         fontSize: 13,
         fontWeight: FontWeight.w600,
@@ -778,14 +852,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                      color: AppTheme.textPrimary, fontSize: 14),
+                  style: TextStyle(color: AppTheme.textPrimary, fontSize: 14),
                 ),
                 if (subtitle != null)
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 12),
+                    style:
+                        TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                   ),
               ],
             ),
@@ -826,16 +899,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Text(
                     title,
                     style: TextStyle(
-                      color: isDestructive
-                          ? AppTheme.error
-                          : AppTheme.textPrimary,
+                      color:
+                          isDestructive ? AppTheme.error : AppTheme.textPrimary,
                       fontSize: 14,
                     ),
                   ),
                   if (subtitle != null)
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                           color: AppTheme.textSecondary, fontSize: 12),
                     ),
                 ],
@@ -860,13 +932,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           Text(
             label,
-            style:
-                const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
+            style: TextStyle(color: AppTheme.textPrimary, fontSize: 14),
           ),
           Text(
             value,
-            style: const TextStyle(
-                color: AppTheme.textSecondary, fontSize: 14),
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
           ),
         ],
       ),
@@ -892,11 +962,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.surfaceDark,
-        title: const Text(
+        title: Text(
           '데이터 초기화',
           style: TextStyle(color: AppTheme.textPrimary),
         ),
-        content: const Text(
+        content: Text(
           '모든 근무 스케줄과 수면 기록이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',
           style: TextStyle(color: AppTheme.textSecondary),
         ),
@@ -914,14 +984,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               // deleted shift survives in memory and gets rescheduled.
               await ref.read(scheduleProvider.notifier).clearAll();
               final now = DateTime.now();
-              ref.read(scheduleProvider.notifier).loadShiftsForMonth(now.year, now.month);
+              ref
+                  .read(scheduleProvider.notifier)
+                  .loadShiftsForMonth(now.year, now.month);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('모든 데이터가 초기화되었습니다')),
                 );
               }
             },
-            child: const Text(
+            child: Text(
               '초기화',
               style: TextStyle(color: AppTheme.error),
             ),

@@ -34,7 +34,7 @@ class ConditionMetric extends StatelessWidget {
           child: Text(
             value,
             maxLines: 1,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 15,
               fontWeight: FontWeight.bold,
@@ -46,7 +46,7 @@ class ConditionMetric extends StatelessWidget {
           child: Text(
             label,
             maxLines: 1,
-            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 11),
           ),
         ),
       ],

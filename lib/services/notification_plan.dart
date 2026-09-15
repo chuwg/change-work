@@ -137,9 +137,7 @@ class NotificationPlanner {
             id: bedtimeBaseId + i,
             kind: NotificationKind.bedtime,
             time: bedtime,
-            title: type == AppConstants.shiftNight
-                ? '낮잠 시간이에요'
-                : '취침 시간이에요',
+            title: type == AppConstants.shiftNight ? '낮잠 시간이에요' : '취침 시간이에요',
             body: _bedtimeBody(type, when),
           ));
 
@@ -156,8 +154,8 @@ class NotificationPlanner {
         }
 
         if (type == AppConstants.shiftNight) {
-          final noon = DateTime(
-              shiftDate.year, shiftDate.month, shiftDate.day, 12, 0);
+          final noon =
+              DateTime(shiftDate.year, shiftDate.month, shiftDate.day, 12, 0);
           if (noon.isAfter(now)) {
             plan.add(PlannedNotification(
               id: preShiftBaseId + i,
@@ -221,11 +219,11 @@ class NotificationPlanner {
   static bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  static String _hhmm(DateTime t) =>
-      '${t.hour.toString().padLeft(2, '0')}:'
+  static String _hhmm(DateTime t) => '${t.hour.toString().padLeft(2, '0')}:'
       '${t.minute.toString().padLeft(2, '0')}';
 
-  static String _shiftLabel(String type) => const {
+  static String _shiftLabel(String type) =>
+      const {
         AppConstants.shiftDay: '주간',
         AppConstants.shiftEvening: '오후',
         AppConstants.shiftNight: '야간',

@@ -15,7 +15,7 @@ class EnergyDailyLineChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (records.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           '오늘 에너지 기록이 없습니다\n에너지를 기록해보세요!',
           textAlign: TextAlign.center,
@@ -52,7 +52,7 @@ class EnergyDailyLineChart extends StatelessWidget {
                 if (index < 1 || index > 5) return const SizedBox();
                 return Text(
                   labels[index],
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppTheme.textTertiary,
                     fontSize: 9,
                   ),
@@ -72,7 +72,7 @@ class EnergyDailyLineChart extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     '$hour시',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.textTertiary,
                       fontSize: 10,
                     ),
@@ -140,7 +140,7 @@ class EnergyDailyLineChart extends StatelessWidget {
               label: HorizontalLineLabel(
                 show: true,
                 alignment: Alignment.topRight,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.warning,
                   fontSize: 9,
                 ),
@@ -165,7 +165,7 @@ class EnergyWeeklyBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (dailyAverages.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           '에너지 기록이 없습니다',
           style: TextStyle(
@@ -190,7 +190,7 @@ class EnergyWeeklyBarChart extends StatelessWidget {
               final avg = dailyAverages[groupIndex].value;
               return BarTooltipItem(
                 '${avg.toStringAsFixed(1)}\n${AppHelpers.getEnergyLabel(avg.round())}',
-                const TextStyle(
+                TextStyle(
                   color: AppTheme.textPrimary,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -218,7 +218,7 @@ class EnergyWeeklyBarChart extends StatelessWidget {
                 }
                 return Text(
                   '${value.toInt()}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppTheme.textTertiary,
                     fontSize: 10,
                   ),
@@ -234,13 +234,12 @@ class EnergyWeeklyBarChart extends StatelessWidget {
                 final index = value.toInt();
                 if (index >= dailyAverages.length) return const SizedBox();
                 final weekdays = ['월', '화', '수', '목', '금', '토', '일'];
-                final weekday =
-                    weekdays[dailyAverages[index].key.weekday - 1];
+                final weekday = weekdays[dailyAverages[index].key.weekday - 1];
                 return Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     weekday,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.textTertiary,
                       fontSize: 10,
                     ),

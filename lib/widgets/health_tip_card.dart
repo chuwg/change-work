@@ -50,7 +50,7 @@ class HealthTipCard extends StatelessWidget {
                       tip.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppTheme.textPrimary,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -89,7 +89,7 @@ class HealthTipCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               tip.description,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 13,
                 height: 1.6,

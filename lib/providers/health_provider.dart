@@ -77,8 +77,7 @@ class HealthNotifier extends StateNotifier<HealthState> {
           latestTimes['end'] != null) {
         schedule = ShiftSchedule.fromTimeStrings(
             shiftType, latestTimes['start']!, latestTimes['end']!);
-      } else if (todayShift.startTime != null &&
-          todayShift.endTime != null) {
+      } else if (todayShift.startTime != null && todayShift.endTime != null) {
         schedule = ShiftSchedule.fromTimeStrings(
             shiftType, todayShift.startTime!, todayShift.endTime!);
       }

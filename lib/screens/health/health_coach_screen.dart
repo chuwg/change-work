@@ -22,7 +22,9 @@ class _HealthCoachScreenState extends ConsumerState<HealthCoachScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      try { ref.read(healthProvider.notifier).refreshHealthData(); } catch (_) {}
+      try {
+        ref.read(healthProvider.notifier).refreshHealthData();
+      } catch (_) {}
     });
   }
 
@@ -49,7 +51,7 @@ class _HealthCoachScreenState extends ConsumerState<HealthCoachScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       '건강 코치',
                       style: TextStyle(
                         color: AppTheme.textPrimary,
@@ -60,9 +62,9 @@ class _HealthCoachScreenState extends ConsumerState<HealthCoachScreen> {
                     const SizedBox(height: 4),
                     Text(
                       todayShift != null
-                          ? '오늘 ${AppHelpers.getShiftLabel(todayShift.type)} 근무 기준 맞춤 가이드'
+                          ? '오늘 ${AppHelpers.getShiftDisplayName(todayShift.type)} 기준 맞춤 가이드'
                           : '근무 스케줄을 등록하면 맞춤 가이드를 제공합니다',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppTheme.textSecondary,
                         fontSize: 13,
                       ),
@@ -77,8 +79,7 @@ class _HealthCoachScreenState extends ConsumerState<HealthCoachScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: GestureDetector(
-                  onTap: () =>
-                      Navigator.pushNamed(context, '/circadian'),
+                  onTap: () => Navigator.pushNamed(context, '/circadian'),
                   child: Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -174,7 +175,7 @@ class _HealthCoachScreenState extends ConsumerState<HealthCoachScreen> {
                           size: 48,
                         ),
                         const SizedBox(height: 12),
-                        const Text(
+                        Text(
                           '근무 스케줄을 등록하면\n맞춤 건강 가이드를 제공합니다',
                           textAlign: TextAlign.center,
                           style: TextStyle(

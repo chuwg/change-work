@@ -71,10 +71,8 @@ class WidgetService {
     await HomeWidget.saveWidgetData(keyTodayLabel, shiftLabel);
     await HomeWidget.saveWidgetData(keyTodayStart, resolvedStart);
     await HomeWidget.saveWidgetData(keyTodayEnd, resolvedEnd);
-    await HomeWidget.saveWidgetData(
-        keyDaysUntilOff, state.daysUntilNextOff);
-    await HomeWidget.saveWidgetData(
-        keyWeekShifts, _buildWeekShiftsJson(state));
+    await HomeWidget.saveWidgetData(keyDaysUntilOff, state.daysUntilNextOff);
+    await HomeWidget.saveWidgetData(keyWeekShifts, _buildWeekShiftsJson(state));
     await HomeWidget.saveWidgetData(
         keyLastUpdated, DateTime.now().toIso8601String());
   }
@@ -101,8 +99,7 @@ class WidgetService {
         'date':
             '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
         'type': type,
-        'label':
-            shift != null ? AppHelpers.getShiftLabel(shift.type) : '-',
+        'label': shift != null ? AppHelpers.getShiftLabel(shift.type) : '-',
         'start': start,
         'end': end,
       };

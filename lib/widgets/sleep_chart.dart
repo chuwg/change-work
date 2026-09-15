@@ -21,7 +21,7 @@ class SleepBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (days.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           '수면 기록이 없습니다\n수면을 기록해보세요!',
           textAlign: TextAlign.center,
@@ -49,7 +49,7 @@ class SleepBarChart extends StatelessWidget {
               return BarTooltipItem(
                 '${day.totalHours.toStringAsFixed(1)}시간$split\n'
                 '${AppHelpers.getSleepQualityLabel(day.quality)}',
-                const TextStyle(
+                TextStyle(
                   color: AppTheme.textPrimary,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -75,7 +75,7 @@ class SleepBarChart extends StatelessWidget {
                 if (value % 3 != 0) return const SizedBox();
                 return Text(
                   '${value.toInt()}h',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppTheme.textTertiary,
                     fontSize: 10,
                   ),
@@ -96,7 +96,7 @@ class SleepBarChart extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     weekday,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.textTertiary,
                       fontSize: 10,
                     ),
@@ -130,7 +130,7 @@ class SleepBarChart extends StatelessWidget {
               label: HorizontalLineLabel(
                 show: true,
                 alignment: Alignment.topRight,
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.success,
                   fontSize: 9,
                 ),
@@ -194,7 +194,7 @@ class SleepQualityLineChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (records.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           '데이터가 없습니다',
           style: TextStyle(color: AppTheme.textSecondary),
@@ -225,7 +225,7 @@ class SleepQualityLineChart extends StatelessWidget {
                 if (index < 1 || index > 5) return const SizedBox();
                 return Text(
                   labels[index],
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppTheme.textTertiary,
                     fontSize: 9,
                   ),

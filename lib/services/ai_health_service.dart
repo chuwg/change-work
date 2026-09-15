@@ -152,10 +152,12 @@ class AiHealthService {
       final hours = yesterdaySleep.durationHours;
       final bedHour = yesterdaySleep.bedTime.hour;
       final bedMin = yesterdaySleep.bedTime.minute;
-      final bedStr = '${bedHour.toString().padLeft(2, '0')}:${bedMin.toString().padLeft(2, '0')}';
+      final bedStr =
+          '${bedHour.toString().padLeft(2, '0')}:${bedMin.toString().padLeft(2, '0')}';
       final wakeHour = yesterdaySleep.wakeTime.hour;
       final wakeMin = yesterdaySleep.wakeTime.minute;
-      final wakeStr = '${wakeHour.toString().padLeft(2, '0')}:${wakeMin.toString().padLeft(2, '0')}';
+      final wakeStr =
+          '${wakeHour.toString().padLeft(2, '0')}:${wakeMin.toString().padLeft(2, '0')}';
 
       if (hours < targetHours - 1) {
         final deficit = targetHours - hours;
@@ -176,8 +178,7 @@ class AiHealthService {
           id: 'insight_sleep_good',
           category: AppConstants.tipSleep,
           title: '어제 수면 ${hours.toStringAsFixed(1)}시간 - 충분',
-          description:
-              '어제 $bedStr~$wakeStr에 충분히 잘 수면했습니다. '
+          description: '어제 $bedStr~$wakeStr에 충분히 잘 수면했습니다. '
               '이 패턴을 유지하면 서카디안 리듬이 안정됩니다. '
               '오늘도 비슷한 시간에 취침하세요.',
           shiftType: type,
@@ -189,8 +190,7 @@ class AiHealthService {
           id: 'insight_sleep_ok',
           category: AppConstants.tipSleep,
           title: '어제 수면 ${hours.toStringAsFixed(1)}시간',
-          description:
-              '어제 $bedStr~$wakeStr에 수면했습니다. '
+          description: '어제 $bedStr~$wakeStr에 수면했습니다. '
               '${hours < targetHours ? "조금 더 수면 시간을 확보하면 컨디션이 좋아집니다." : "수면 시간은 적절합니다."} '
               '${yesterdaySleep.quality < 3 ? "수면 품질 개선을 위해 취침 전 스마트폰 사용을 줄여보세요." : ""}',
           shiftType: type,
@@ -201,21 +201,18 @@ class AiHealthService {
 
     // --- Weekly sleep trend ---
     if (recentSleep.length >= 3) {
-      final avgHours = recentSleep.fold<double>(
-              0, (sum, r) => sum + r.durationHours) /
-          recentSleep.length;
-      final avgQuality = recentSleep.fold<int>(
-              0, (sum, r) => sum + r.quality) /
+      final avgHours =
+          recentSleep.fold<double>(0, (sum, r) => sum + r.durationHours) /
+              recentSleep.length;
+      final avgQuality = recentSleep.fold<int>(0, (sum, r) => sum + r.quality) /
           recentSleep.length;
 
       // Check bed time consistency
-      final bedMinutes = recentSleep
-          .map((r) {
-            var m = r.bedTime.hour * 60 + r.bedTime.minute;
-            if (m < 720) m += 1440; // normalize past-midnight times
-            return m;
-          })
-          .toList();
+      final bedMinutes = recentSleep.map((r) {
+        var m = r.bedTime.hour * 60 + r.bedTime.minute;
+        if (m < 720) m += 1440; // normalize past-midnight times
+        return m;
+      }).toList();
       final avgBedMin = bedMinutes.reduce((a, b) => a + b) / bedMinutes.length;
       final variance = bedMinutes
               .map((m) => (m - avgBedMin) * (m - avgBedMin))
@@ -276,8 +273,7 @@ class AiHealthService {
           id: 'insight_steps_low',
           category: AppConstants.tipExercise,
           title: '오늘 활동량이 적습니다',
-          description:
-              '현재 ${_formatSteps(todaySteps)}걸음입니다. '
+          description: '현재 ${_formatSteps(todaySteps)}걸음입니다. '
               '가벼운 산책이라도 하면 수면 품질과 에너지에 도움됩니다. '
               '${type == AppConstants.shiftNight ? "야간 근무 전 10-15분 산책을 추천합니다." : "퇴근 후 20분 산책을 추천합니다."}',
           shiftType: type,
@@ -289,8 +285,7 @@ class AiHealthService {
           id: 'insight_steps_good',
           category: AppConstants.tipExercise,
           title: '활동량 충분 - ${_formatSteps(todaySteps)}걸음',
-          description:
-              '오늘 충분히 활동했습니다. '
+          description: '오늘 충분히 활동했습니다. '
               '적절한 신체 활동은 수면 품질을 높여줍니다. '
               '다만 취침 2시간 전부터는 격렬한 운동을 피하세요.',
           shiftType: type,
@@ -306,8 +301,7 @@ class AiHealthService {
           id: 'insight_hr_high',
           category: AppConstants.tipEnergy,
           title: '심박수가 높습니다 (${lastHeartRate.round()} BPM)',
-          description:
-              '안정 시 심박수가 높으면 스트레스나 피로가 원인일 수 있습니다. '
+          description: '안정 시 심박수가 높으면 스트레스나 피로가 원인일 수 있습니다. '
               '심호흡을 5분간 해보세요 (4초 들이쉬고, 7초 참고, 8초 내쉬기). '
               '카페인 섭취도 확인해보세요.',
           shiftType: type,
@@ -319,17 +313,16 @@ class AiHealthService {
 
     // --- Energy pattern insight ---
     if (recentEnergy.length >= 3) {
-      final avgEnergy = recentEnergy.fold<int>(
-              0, (sum, r) => sum + r.energyLevel) /
-          recentEnergy.length;
+      final avgEnergy =
+          recentEnergy.fold<int>(0, (sum, r) => sum + r.energyLevel) /
+              recentEnergy.length;
 
       if (avgEnergy < 2.5) {
         tips.add(HealthTip(
           id: 'insight_energy_declining',
           category: AppConstants.tipEnergy,
           title: '최근 에너지가 낮은 상태입니다',
-          description:
-              '최근 평균 에너지 ${avgEnergy.toStringAsFixed(1)}/5입니다. '
+          description: '최근 평균 에너지 ${avgEnergy.toStringAsFixed(1)}/5입니다. '
               '${recentSleep.isNotEmpty && recentSleep.fold<double>(0, (s, r) => s + r.durationHours) / recentSleep.length < 6 ? "수면 부족이 주요 원인으로 보입니다. 수면 시간 확보가 우선입니다." : "규칙적인 식사, 수분 섭취, 가벼운 산책으로 회복해보세요."}',
           shiftType: type,
           priority: 0,
@@ -370,8 +363,7 @@ class AiHealthService {
           id: 'time_wake_night',
           category: AppConstants.tipLight,
           title: '기상 후 빛 차단 유지',
-          description:
-              '야간 근무 후 기상했다면 실내를 어둡게 유지하세요. '
+          description: '야간 근무 후 기상했다면 실내를 어둡게 유지하세요. '
               '다음 수면을 위해 밝은 빛 노출을 최소화하는 것이 중요합니다.',
           shiftType: type,
           timing: '지금',
@@ -382,8 +374,7 @@ class AiHealthService {
           id: 'time_wake_day',
           category: AppConstants.tipLight,
           title: '기상 후 햇빛을 쬐세요',
-          description:
-              '15-30분 햇빛 노출로 멜라토닌 분비를 억제하고 각성도를 높이세요. '
+          description: '15-30분 햇빛 노출로 멜라토닌 분비를 억제하고 각성도를 높이세요. '
               '창가에서 아침 식사를 하는 것도 좋은 방법입니다.',
           shiftType: type,
           timing: '지금 ~ 30분',
@@ -393,16 +384,15 @@ class AiHealthService {
     }
 
     // During shift - mid-point energy dip warning
-    final midShift = (sched.startHour +
-            ((sched.endHour - sched.startHour + 24) % 24) ~/ 2) %
-        24;
+    final midShift =
+        (sched.startHour + ((sched.endHour - sched.startHour + 24) % 24) ~/ 2) %
+            24;
     if (_inHourRange(hour, midShift, (midShift + 2) % 24)) {
       tips.add(HealthTip(
         id: 'time_mid_shift',
         category: AppConstants.tipEnergy,
         title: '근무 중반 - 에너지 관리',
-        description:
-            '근무 중간에 에너지가 떨어지기 쉽습니다. '
+        description: '근무 중간에 에너지가 떨어지기 쉽습니다. '
             '물 한 잔 마시고, 가능하면 2-3분 스트레칭을 하세요. '
             '${type == AppConstants.shiftNight ? "냉수로 세안하면 각성에 도움됩니다." : "짧은 걷기도 효과적입니다."}',
         shiftType: type,
@@ -424,8 +414,7 @@ class AiHealthService {
         id: 'energy_night_1',
         category: AppConstants.tipEnergy,
         title: '야간 근무 에너지 관리',
-        description:
-            '근무 시작 시 밝은 빛에 노출하고, '
+        description: '근무 시작 시 밝은 빛에 노출하고, '
             '02:00-04:00 사이 가벼운 스트레칭으로 각성도를 유지하세요. '
             '짧은 산책이나 냉수 세안도 효과적입니다.',
         shiftType: type,
@@ -437,8 +426,7 @@ class AiHealthService {
         id: 'energy_day_1',
         category: AppConstants.tipEnergy,
         title: '오후 슬럼프 극복',
-        description:
-            '13:00-15:00 사이 에너지가 떨어질 수 있습니다. '
+        description: '13:00-15:00 사이 에너지가 떨어질 수 있습니다. '
             '가벼운 산책이나 스트레칭으로 각성도를 유지하세요. '
             '고당분 간식 대신 견과류나 과일을 섭취하세요.',
         shiftType: type,
@@ -450,8 +438,7 @@ class AiHealthService {
         id: 'energy_evening_1',
         category: AppConstants.tipEnergy,
         title: '저녁 근무 에너지 관리',
-        description:
-            '출근 전 가벼운 운동으로 에너지를 끌어올리세요. '
+        description: '출근 전 가벼운 운동으로 에너지를 끌어올리세요. '
             '근무 중 규칙적으로 수분을 섭취하면 집중력 유지에 도움됩니다.',
         shiftType: type,
         priority: 4,
@@ -471,8 +458,7 @@ class AiHealthService {
         id: 'sleep_night_1',
         category: AppConstants.tipSleep,
         title: '야간 근무 후 수면 가이드',
-        description:
-            '퇴근(${sched.endTimeStr}) 후 바로 수면을 취하세요. '
+        description: '퇴근(${sched.endTimeStr}) 후 바로 수면을 취하세요. '
             '암막 커튼과 수면 안대를 사용하고, '
             '실내 온도를 18-20도로 유지하면 깊은 수면에 도움됩니다.',
         shiftType: type,
@@ -484,12 +470,12 @@ class AiHealthService {
         id: 'sleep_evening_1',
         category: AppConstants.tipSleep,
         title: '저녁 근무 수면 패턴',
-        description:
-            '퇴근(${sched.endTimeStr}) 후 1시간 릴랙스 후 수면하세요. '
+        description: '퇴근(${sched.endTimeStr}) 후 1시간 릴랙스 후 수면하세요. '
             '권장 취침: ${sched.recommendedBedTimeStr}, '
             '기상: ${sched.recommendedWakeTimeStr}',
         shiftType: type,
-        timing: '${sched.recommendedBedTimeStr}~${sched.recommendedWakeTimeStr}',
+        timing:
+            '${sched.recommendedBedTimeStr}~${sched.recommendedWakeTimeStr}',
         priority: 3,
       ));
     } else if (type == AppConstants.shiftDay) {
@@ -497,12 +483,12 @@ class AiHealthService {
         id: 'sleep_day_1',
         category: AppConstants.tipSleep,
         title: '주간 근무 수면 최적화',
-        description:
-            '${sched.recommendedBedTimeStr}에 잠자리에 드세요. '
+        description: '${sched.recommendedBedTimeStr}에 잠자리에 드세요. '
             '취침 1시간 전 블루라이트를 차단하고, '
             '${sched.recommendedWakeTimeStr} 기상을 유지하면 서카디안 리듬이 안정됩니다.',
         shiftType: type,
-        timing: '${sched.recommendedBedTimeStr}~${sched.recommendedWakeTimeStr}',
+        timing:
+            '${sched.recommendedBedTimeStr}~${sched.recommendedWakeTimeStr}',
         priority: 3,
       ));
     } else {
@@ -510,8 +496,7 @@ class AiHealthService {
         id: 'sleep_off_1',
         category: AppConstants.tipSleep,
         title: '휴무일 수면 리듬 유지',
-        description:
-            '휴무일에도 평소 기상 시간과 1시간 이상 차이나지 않도록 하세요. '
+        description: '휴무일에도 평소 기상 시간과 1시간 이상 차이나지 않도록 하세요. '
             '주말 몰아자기는 서카디안 리듬을 깨뜨립니다.',
         shiftType: type,
         priority: 3,
@@ -550,8 +535,7 @@ class AiHealthService {
         id: 'meal_evening_1',
         category: AppConstants.tipMeal,
         title: '저녁 근무 식사 가이드',
-        description:
-            '출근 전 충분한 식사를 하세요. '
+        description: '출근 전 충분한 식사를 하세요. '
             '마지막 식사는 ${sched.lastMealStr}까지 마치세요.',
         shiftType: type,
         timing: '마지막 식사 ${sched.lastMealStr}',
@@ -564,8 +548,7 @@ class AiHealthService {
         id: 'meal_day_1',
         category: AppConstants.tipMeal,
         title: '규칙적 식사 리마인더',
-        description:
-            '아침(${breakfastHour.toString().padLeft(2, '0')}:00), '
+        description: '아침(${breakfastHour.toString().padLeft(2, '0')}:00), '
             '점심(${lunchHour.toString().padLeft(2, '0')}:00), '
             '저녁(${sched.lastMealStr}) 규칙적인 식사를 유지하세요.',
         shiftType: type,
@@ -587,8 +570,7 @@ class AiHealthService {
         id: 'exercise_off_1',
         category: AppConstants.tipExercise,
         title: '휴무일 운동 추천',
-        description:
-            '30-40분 유산소 운동으로 체력을 회복하세요. '
+        description: '30-40분 유산소 운동으로 체력을 회복하세요. '
             '야외 운동으로 햇빛을 충분히 쬐면 서카디안 리듬 회복에 도움됩니다.',
         shiftType: type,
         timing: '오전 10시-오후 2시',
@@ -601,8 +583,7 @@ class AiHealthService {
         id: 'exercise_${type}_1',
         category: AppConstants.tipExercise,
         title: '운동 추천 시간',
-        description:
-            '퇴근 후 ${exerciseStart.toString().padLeft(2, '0')}:00~'
+        description: '퇴근 후 ${exerciseStart.toString().padLeft(2, '0')}:00~'
             '${exerciseEnd.toString().padLeft(2, '0')}:00 사이에 운동하세요. '
             '취침 3시간 전까지 마쳐야 수면에 방해가 되지 않습니다.',
         shiftType: type,
@@ -629,8 +610,7 @@ class AiHealthService {
         id: 'caffeine_cutoff',
         category: AppConstants.tipCaffeine,
         title: '카페인 컷오프 시간 경과',
-        description:
-            '${cutoff.toString().padLeft(2, '0')}:00 이후입니다. '
+        description: '${cutoff.toString().padLeft(2, '0')}:00 이후입니다. '
             '카페인 섭취를 자제하세요. '
             '카페인 반감기(5-6시간)를 고려하면 수면에 방해됩니다. '
             '대신 물이나 허브차를 마시세요.',
@@ -643,8 +623,7 @@ class AiHealthService {
         id: 'caffeine_ok',
         category: AppConstants.tipCaffeine,
         title: '카페인 섭취 가능 시간',
-        description:
-            '${cutoff.toString().padLeft(2, '0')}:00까지 카페인 섭취가 가능합니다. '
+        description: '${cutoff.toString().padLeft(2, '0')}:00까지 카페인 섭취가 가능합니다. '
             '근무 시작 시 커피 한 잔으로 각성도를 높이세요.',
         shiftType: type,
         timing: '${cutoff.toString().padLeft(2, '0')}:00까지',
@@ -668,8 +647,7 @@ class AiHealthService {
         id: 'light_night_1',
         category: AppConstants.tipLight,
         title: '빛 노출 관리 (야간)',
-        description:
-            '퇴근(${sched.endTimeStr}) 시 선글라스를 착용해 햇빛을 차단하세요. '
+        description: '퇴근(${sched.endTimeStr}) 시 선글라스를 착용해 햇빛을 차단하세요. '
             '암막 커튼으로 수면 환경을 조성하고, '
             '출근 전 15분간 밝은 빛에 노출되면 각성에 도움됩니다.',
         shiftType: type,
@@ -743,9 +721,9 @@ class AiHealthService {
 
     double score = 50.0;
 
-    final avgHours = sleepRecords.fold<double>(
-            0, (sum, r) => sum + r.durationHours) /
-        sleepRecords.length;
+    final avgHours =
+        sleepRecords.fold<double>(0, (sum, r) => sum + r.durationHours) /
+            sleepRecords.length;
 
     if (avgHours >= 7 && avgHours <= 9) {
       score += 20;
@@ -755,19 +733,16 @@ class AiHealthService {
       score -= 10;
     }
 
-    final avgQuality = sleepRecords.fold<int>(
-            0, (sum, r) => sum + r.quality) /
+    final avgQuality = sleepRecords.fold<int>(0, (sum, r) => sum + r.quality) /
         sleepRecords.length;
     score += (avgQuality - 3) * 10;
 
     if (sleepRecords.length >= 3) {
-      final bedTimeMinutes = sleepRecords
-          .map((r) {
-            var m = r.bedTime.hour * 60 + r.bedTime.minute;
-            if (m < 720) m += 1440; // normalize past-midnight times
-            return m;
-          })
-          .toList();
+      final bedTimeMinutes = sleepRecords.map((r) {
+        var m = r.bedTime.hour * 60 + r.bedTime.minute;
+        if (m < 720) m += 1440; // normalize past-midnight times
+        return m;
+      }).toList();
       final avgBedTime =
           bedTimeMinutes.reduce((a, b) => a + b) / bedTimeMinutes.length;
       final variance = bedTimeMinutes

@@ -226,16 +226,20 @@ class HealthDataService {
     if (sleepData.isEmpty) return 0;
 
     // Separate session-level points from stage points
-    final sessionPoints = sleepData.where((p) =>
-        p.type == HealthDataType.SLEEP_SESSION ||
-        p.type == HealthDataType.SLEEP_ASLEEP ||
-        p.type == HealthDataType.SLEEP_IN_BED).toList();
+    final sessionPoints = sleepData
+        .where((p) =>
+            p.type == HealthDataType.SLEEP_SESSION ||
+            p.type == HealthDataType.SLEEP_ASLEEP ||
+            p.type == HealthDataType.SLEEP_IN_BED)
+        .toList();
 
-    final stagePoints = sleepData.where((p) =>
-        p.type == HealthDataType.SLEEP_DEEP ||
-        p.type == HealthDataType.SLEEP_LIGHT ||
-        p.type == HealthDataType.SLEEP_REM ||
-        p.type == HealthDataType.SLEEP_AWAKE).toList();
+    final stagePoints = sleepData
+        .where((p) =>
+            p.type == HealthDataType.SLEEP_DEEP ||
+            p.type == HealthDataType.SLEEP_LIGHT ||
+            p.type == HealthDataType.SLEEP_REM ||
+            p.type == HealthDataType.SLEEP_AWAKE)
+        .toList();
 
     // Build consolidated sessions from session-level points
     // Merge overlapping/adjacent sessions
@@ -372,7 +376,8 @@ class HealthDataService {
     if (total < 30) return null; // Not enough stage data
 
     // Weighted score: deep=5, rem=4, light=3, awake=1
-    final score = (deepMin * 5 + remMin * 4 + lightMin * 3 + awakeMin * 1) / total;
+    final score =
+        (deepMin * 5 + remMin * 4 + lightMin * 3 + awakeMin * 1) / total;
     return score.round().clamp(1, 5);
   }
 

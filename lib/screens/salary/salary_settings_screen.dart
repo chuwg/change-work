@@ -36,8 +36,8 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
         TextEditingController(text: settings.monthlySalary.toStringAsFixed(0));
     _nightMultController =
         TextEditingController(text: settings.nightMultiplier.toString());
-    _nightFixedController =
-        TextEditingController(text: settings.nightFixedAmount.toStringAsFixed(0));
+    _nightFixedController = TextEditingController(
+        text: settings.nightFixedAmount.toStringAsFixed(0));
     _weekendMultController =
         TextEditingController(text: settings.weekendMultiplier.toString());
     _overtimeMultController =
@@ -95,7 +95,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 '고정 수당 추가',
                 style: TextStyle(
                   color: AppTheme.textPrimary,
@@ -106,7 +106,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
               const SizedBox(height: 16),
               TextField(
                 controller: nameController,
-                style: const TextStyle(color: AppTheme.textPrimary),
+                style: TextStyle(color: AppTheme.textPrimary),
                 decoration: const InputDecoration(
                   hintText: '수당 이름 (예: 식대)',
                 ),
@@ -115,7 +115,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
               TextField(
                 controller: amountController,
                 keyboardType: TextInputType.number,
-                style: const TextStyle(color: AppTheme.textPrimary),
+                style: TextStyle(color: AppTheme.textPrimary),
                 decoration: const InputDecoration(
                   hintText: '금액 (원)',
                   suffixText: '원',
@@ -125,7 +125,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     '근무일 당 지급',
                     style: TextStyle(
                       color: AppTheme.textSecondary,
@@ -140,7 +140,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
               ),
               Text(
                 perShift ? '근무일 수 × 금액으로 계산됩니다' : '월 고정 금액으로 계산됩니다',
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppTheme.textTertiary,
                   fontSize: 12,
                 ),
@@ -151,8 +151,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     final name = nameController.text.trim();
-                    final amount =
-                        double.tryParse(amountController.text) ?? 0;
+                    final amount = double.tryParse(amountController.text) ?? 0;
                     if (name.isEmpty || amount <= 0) return;
                     setState(() {
                       _fixedAllowances.add(FixedAllowance(
@@ -181,7 +180,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
         actions: [
           TextButton(
             onPressed: _save,
-            child: const Text(
+            child: Text(
               '저장',
               style: TextStyle(
                 color: AppTheme.primary,
@@ -228,14 +227,14 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
                 ? _hourlyController
                 : _monthlyController,
             keyboardType: TextInputType.number,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
             decoration: InputDecoration(
               suffixText: '원',
-              suffixStyle: const TextStyle(
+              suffixStyle: TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 16,
               ),
@@ -279,7 +278,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
             _nightAllowanceType == nightAllowanceFixed
                 ? '야간 근무 1회당 지급되는 고정 금액'
                 : '야간 시간대(22:00~06:00) 기본급 대비 배율',
-            style: const TextStyle(color: AppTheme.textTertiary, fontSize: 12),
+            style: TextStyle(color: AppTheme.textTertiary, fontSize: 12),
           ),
 
           const SizedBox(height: 24),
@@ -309,7 +308,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             '기본급 대비 배율 (예: 1.5 = 기본급의 150%)',
             style: TextStyle(color: AppTheme.textTertiary, fontSize: 12),
           ),
@@ -333,7 +332,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: AppTheme.glassCard,
-              child: const Center(
+              child: Center(
                 child: Text(
                   '식대, 교통비 등 고정 수당을 추가해보세요',
                   style: TextStyle(
@@ -356,8 +355,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
                     color: AppTheme.error.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.delete_rounded,
-                      color: AppTheme.error),
+                  child: Icon(Icons.delete_rounded, color: AppTheme.error),
                 ),
                 onDismissed: (_) {
                   setState(() => _fixedAllowances.removeAt(i));
@@ -372,11 +370,10 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color:
-                              AppTheme.salaryGreen.withValues(alpha: 0.15),
+                          color: AppTheme.salaryGreen.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.payments_rounded,
                           color: AppTheme.salaryGreen,
                           size: 18,
@@ -389,7 +386,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
                           children: [
                             Text(
                               a.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: AppTheme.textPrimary,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
@@ -397,7 +394,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
                             ),
                             Text(
                               a.perShift ? '근무일 당' : '월 고정',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: AppTheme.textTertiary,
                                 fontSize: 12,
                               ),
@@ -407,7 +404,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
                       ),
                       Text(
                         '${a.amount.toStringAsFixed(0)}원',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppTheme.textPrimary,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -428,7 +425,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
   Widget _buildSectionLabel(String text) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         color: AppTheme.textSecondary,
         fontSize: 13,
         fontWeight: FontWeight.w600,
@@ -478,11 +475,11 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
             color: AppTheme.shiftNight.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.nightlight_round,
+          child: Icon(Icons.nightlight_round,
               color: AppTheme.shiftNight, size: 18),
         ),
         const SizedBox(width: 12),
-        const Expanded(
+        Expanded(
           child: Text(
             '야간 근무당',
             style: TextStyle(color: AppTheme.textPrimary, fontSize: 14),
@@ -494,15 +491,14 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
             controller: _nightFixedController,
             keyboardType: TextInputType.number,
             textAlign: TextAlign.right,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
             decoration: const InputDecoration(
               suffixText: '원',
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               isDense: true,
             ),
           ),
@@ -541,8 +537,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
             Text(
               label,
               style: TextStyle(
-                color:
-                    selected ? AppTheme.primary : AppTheme.textSecondary,
+                color: selected ? AppTheme.primary : AppTheme.textSecondary,
                 fontSize: 15,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
               ),
@@ -574,7 +569,7 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 14,
             ),
@@ -584,18 +579,16 @@ class _SalarySettingsScreenState extends ConsumerState<SalarySettingsScreen> {
           width: 80,
           child: TextField(
             controller: controller,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.textPrimary,
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
             decoration: const InputDecoration(
               suffixText: 'x',
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               isDense: true,
             ),
           ),

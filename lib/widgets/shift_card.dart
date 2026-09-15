@@ -40,7 +40,7 @@ class TodayShiftCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 '오늘의 근무',
                 style: TextStyle(
                   color: AppTheme.textSecondary,
@@ -57,7 +57,7 @@ class TodayShiftCard extends StatelessWidget {
                   ),
                   child: Text(
                     '휴무까지 $daysUntilOff일',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.shiftOff,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -89,11 +89,11 @@ class TodayShiftCard extends StatelessWidget {
                   children: [
                     Text(
                       shift != null
-                          ? '${AppHelpers.getShiftLabel(shiftType)} 근무'
+                          ? AppHelpers.getShiftDisplayName(shiftType)
                           : '등록된 근무 없음',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppTheme.textPrimary,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -102,7 +102,7 @@ class TodayShiftCard extends StatelessWidget {
                     if (shift?.startTime != null && shift?.endTime != null)
                       Text(
                         '${shift!.startTime} - ${shift!.endTime}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 14,
                         ),
@@ -133,8 +133,9 @@ class ShiftDayChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shiftType = shift?.type ?? '';
-    final color =
-        shift != null ? AppHelpers.getShiftColor(shiftType) : AppTheme.textTertiary;
+    final color = shift != null
+        ? AppHelpers.getShiftColor(shiftType)
+        : AppTheme.textTertiary;
 
     final weekdays = ['월', '화', '수', '목', '금', '토', '일'];
     final weekday = weekdays[date.weekday - 1];
