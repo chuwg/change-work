@@ -14,6 +14,10 @@ struct ChangeWatchApp: App {
 
 class AppDelegate: NSObject, WKApplicationDelegate {
     func applicationDidFinishLaunching() {
+        // Must be up before any view asks for data: this is the only link to
+        // the phone's schedule.
+        WatchSessionManager.shared.activate()
+
         if !ScreenshotMode.isActive {
             UNUserNotificationCenter.current().requestAuthorization(
                 options: [.alert, .sound, .badge]
@@ -23,6 +27,7 @@ class AppDelegate: NSObject, WKApplicationDelegate {
     }
 
     func applicationDidBecomeActive() {
+        WatchSessionManager.shared.requestRefresh()
         scheduleShiftNotifications()
     }
 

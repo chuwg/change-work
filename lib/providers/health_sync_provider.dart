@@ -4,6 +4,7 @@ import '../models/user_profile.dart';
 import '../services/health_data_service.dart';
 import '../services/database_service.dart';
 import '../services/widget_service.dart';
+import '../services/watch_connectivity_service.dart';
 import '../providers/sleep_provider.dart';
 import '../providers/energy_provider.dart';
 import '../providers/schedule_provider.dart';
@@ -141,9 +142,10 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
       // Sync weight/height to user profile if available
       await _syncBodyMeasurements();
 
-      // Import anything the watch queued while it was on its own
+      // Watch data arrives over WatchConnectivity (see listenToWatch); the
+      // legacy App Group queue is drained too for anything a previous build
+      // left behind.
       await _importWatchEnergyRecords();
-      await _importWatchShiftChanges();
 
       // Save last sync time
       final syncTime = DateTime.now();
@@ -231,31 +233,45 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
     } catch (_) {}
   }
 
-  /// Apply shift changes made on the watch.
+  /// Start listening for things the user did on the watch.
   ///
-  /// The watch can only queue them — it has no database — so the phone is what
-  /// actually writes the shift and reschedules notifications for it.
-  Future<void> _importWatchShiftChanges() async {
-    try {
-      final changes = await WidgetService.instance.readWatchShiftChanges();
-      if (changes.isEmpty) return;
+  /// Shift edits and energy taps arrive over WatchConnectivity — the watch
+  /// cannot write into the phone's storage, so the phone is what actually
+  /// records them.
+  void listenToWatch() {
+    WatchConnectivityService.instance.onPayload = _applyWatchPayload;
+    WatchConnectivityService.instance.start();
+  }
 
-      for (final change in changes) {
-        final dateStr = change['date'] as String?;
-        final type = change['type'] as String?;
-        if (dateStr == null || type == null) continue;
-
+  Future<void> _applyWatchPayload(Map<String, dynamic> payload) async {
+    switch (payload['kind']) {
+      case 'shift_change':
+        final dateStr = payload['date'] as String?;
+        final type = payload['type'] as String?;
+        if (dateStr == null || type == null) return;
         final date = DateTime.tryParse(dateStr);
-        if (date == null) continue;
-        if (!AppConstants.shiftTypes.contains(type)) continue;
-
+        if (date == null) return;
+        if (!AppConstants.shiftTypes.contains(type)) return;
         // addShift writes the shift, refreshes the widget and reschedules the
-        // notifications that depend on it.
+        // notifications that depend on it — and pushes the new snapshot back
+        // to the watch.
         await ref.read(scheduleProvider.notifier).addShift(date, type);
-      }
 
-      await WidgetService.instance.clearWatchShiftChanges();
-    } catch (_) {}
+      case 'energy_record':
+        final level = payload['energy_level'] as int?;
+        if (level == null || level < 1 || level > 5) return;
+        final timestamp =
+            DateTime.tryParse(payload['timestamp'] as String? ?? '');
+        final when = timestamp ?? DateTime.now();
+        final shiftType =
+            ref.read(scheduleProvider).getShiftTypeForDate(when);
+        await ref.read(energyProvider.notifier).addEnergyRecord(
+              energyLevel: level,
+              shiftType: shiftType.isEmpty ? null : shiftType,
+              source: 'watch',
+              timestamp: when,
+            );
+    }
   }
 
   /// Auto sync on app start (when sync is enabled).
@@ -269,9 +285,8 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
     await _settingsLoaded;
     if (!state.syncEnabled) return;
 
-    // Always drain the watch queues even if a full sync isn't needed
+    // Legacy queue from builds before WatchConnectivity existed.
     await _importWatchEnergyRecords();
-    await _importWatchShiftChanges();
 
     final last = state.lastSyncAt;
     if (minInterval != null &&

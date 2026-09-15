@@ -21,6 +21,9 @@ class WatchDataWriter {
             defaults?.set(jsonString, forKey: "watch_energy_pending")
         }
 
+        // Same here: the shared container does not cross to the phone.
+        WatchSessionManager.shared.sendEnergyRecord(level: level)
+
         // Update live value so Watch UI reflects immediately
         defaults?.set(level, forKey: "widget_energy_latest")
     }
@@ -52,6 +55,10 @@ class WatchDataWriter {
            let jsonString = String(data: data, encoding: .utf8) {
             defaults?.set(jsonString, forKey: "watch_shift_pending")
         }
+
+        // The queue above is a local record only — the phone cannot see this
+        // container. WatchConnectivity is what actually delivers it.
+        WatchSessionManager.shared.sendShiftChange(date: date, type: type)
 
         // Reflect the change locally so the watch does not look unchanged
         // while it waits for the phone.

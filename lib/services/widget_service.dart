@@ -4,6 +4,7 @@ import 'package:home_widget/home_widget.dart';
 import '../providers/schedule_provider.dart';
 import '../utils/constants.dart';
 import '../utils/helpers.dart';
+import 'watch_connectivity_service.dart';
 
 class WidgetService {
   static final WidgetService instance = WidgetService._internal();
@@ -53,6 +54,34 @@ class WidgetService {
     }
   }
 
+  /// The same snapshot the widget reads, as a plain map.
+  ///
+  /// The widget gets it through the App Group; the watch cannot — App Groups
+  /// are per-device — so the identical payload is also pushed over
+  /// WatchConnectivity.
+  Map<String, Object?> _snapshot(ScheduleState state) {
+    final today = state.todayShift;
+    final shiftType = today?.type ?? 'none';
+    final defaults = AppConstants.defaultShiftTimes[shiftType];
+    final start = (today?.startTime?.isNotEmpty ?? false)
+        ? today!.startTime!
+        : (defaults?['start'] ?? '');
+    final end = (today?.endTime?.isNotEmpty ?? false)
+        ? today!.endTime!
+        : (defaults?['end'] ?? '');
+
+    return {
+      keyTodayType: shiftType,
+      keyTodayLabel:
+          today != null ? AppHelpers.getShiftLabel(today.type) : '미등록',
+      keyTodayStart: start,
+      keyTodayEnd: end,
+      keyDaysUntilOff: state.daysUntilNextOff,
+      keyWeekShifts: _buildWeekShiftsJson(state),
+      keyLastUpdated: DateTime.now().toIso8601String(),
+    };
+  }
+
   Future<void> _writeSharedData(ScheduleState state) async {
     final today = state.todayShift;
     final shiftType = today?.type ?? 'none';
@@ -76,6 +105,9 @@ class WidgetService {
     await HomeWidget.saveWidgetData(keyWeekShifts, _buildWeekShiftsJson(state));
     await HomeWidget.saveWidgetData(
         keyLastUpdated, DateTime.now().toIso8601String());
+
+    // The watch is a separate device and cannot see the container above.
+    await WatchConnectivityService.instance.sendSnapshot(_snapshot(state));
   }
 
   String _buildWeekShiftsJson(ScheduleState state) {

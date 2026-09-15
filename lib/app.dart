@@ -124,6 +124,8 @@ class _MainShellState extends ConsumerState<MainShell>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _applyDebugInitialTab();
+    // Begin receiving shift edits and energy taps from the watch.
+    ref.read(healthSyncProvider.notifier).listenToWatch();
   }
 
   /// Debug-only hook for capturing screenshots of a specific tab.

@@ -14,6 +14,12 @@ import BackgroundTasks
     ) -> Bool {
         GeneratedPluginRegistrant.register(with: self)
 
+        // Watch <-> phone. App Groups do not cross devices, so this is the only
+        // channel that actually reaches the watch app.
+        if let controller = window?.rootViewController as? FlutterViewController {
+            WatchConnectivityBridge.shared.register(with: controller.binaryMessenger)
+        }
+
         // Register background task for periodic health sync
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: "com.change.app.change.healthSync",
