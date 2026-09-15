@@ -141,8 +141,9 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
       // Sync weight/height to user profile if available
       await _syncBodyMeasurements();
 
-      // Import pending energy records from Apple Watch
+      // Import anything the watch queued while it was on its own
       await _importWatchEnergyRecords();
+      await _importWatchShiftChanges();
 
       // Save last sync time
       final syncTime = DateTime.now();
@@ -230,6 +231,33 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
     } catch (_) {}
   }
 
+  /// Apply shift changes made on the watch.
+  ///
+  /// The watch can only queue them — it has no database — so the phone is what
+  /// actually writes the shift and reschedules notifications for it.
+  Future<void> _importWatchShiftChanges() async {
+    try {
+      final changes = await WidgetService.instance.readWatchShiftChanges();
+      if (changes.isEmpty) return;
+
+      for (final change in changes) {
+        final dateStr = change['date'] as String?;
+        final type = change['type'] as String?;
+        if (dateStr == null || type == null) continue;
+
+        final date = DateTime.tryParse(dateStr);
+        if (date == null) continue;
+        if (!AppConstants.shiftTypes.contains(type)) continue;
+
+        // addShift writes the shift, refreshes the widget and reschedules the
+        // notifications that depend on it.
+        await ref.read(scheduleProvider.notifier).addShift(date, type);
+      }
+
+      await WidgetService.instance.clearWatchShiftChanges();
+    } catch (_) {}
+  }
+
   /// Auto sync on app start (when sync is enabled).
   /// Also picks up any data synced by iOS background delivery.
   ///
@@ -241,8 +269,9 @@ class HealthSyncNotifier extends StateNotifier<HealthSyncState> {
     await _settingsLoaded;
     if (!state.syncEnabled) return;
 
-    // Always import Watch energy records even if full sync isn't needed
+    // Always drain the watch queues even if a full sync isn't needed
     await _importWatchEnergyRecords();
+    await _importWatchShiftChanges();
 
     final last = state.lastSyncAt;
     if (minInterval != null &&

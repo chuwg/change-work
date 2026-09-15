@@ -47,6 +47,7 @@
 		E6D3F272561753C7657107BD /* WidgetDataReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15496EDD17C903E09B6B963F /* WidgetDataReader.swift */; };
 		E98EA2FF79936229D0B4D471 /* ChangeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B23E554050FC02C2D600FE /* ChangeWidget.swift */; };
 		F55E0699744032DF4F2ED5DD /* WatchDataExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F3B9DB62844115AD621024B /* WatchDataExtensions.swift */; };
+		C597EE3A5572BC2A722B49AD /* WatchScheduleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511CCD4E2D264A0668B8A8F7 /* WatchScheduleStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -136,6 +137,7 @@
 		15496EDD17C903E09B6B963F /* WidgetDataReader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetDataReader.swift; sourceTree = "<group>"; };
 		3E253320F8FE077008B9A077 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2F3B9DB62844115AD621024B /* WatchDataExtensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchDataExtensions.swift; path = ../../Shared/WatchDataExtensions.swift; sourceTree = "<group>"; };
+		511CCD4E2D264A0668B8A8F7 /* WatchScheduleStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchScheduleStore.swift; path = ../../Shared/WatchScheduleStore.swift; sourceTree = "<group>"; };
 		32FCCBFED5D0D5AC09D4B653 /* ShiftComplicationProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShiftComplicationProvider.swift; sourceTree = "<group>"; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -236,6 +238,7 @@
 			children = (
 				A8D801F15B293AEBF5AE1897 /* HealthKitManager.swift */,
 				2F3B9DB62844115AD621024B /* WatchDataExtensions.swift */,
+				511CCD4E2D264A0668B8A8F7 /* WatchScheduleStore.swift */,
 				B4DE383F0831D7A5377519AD /* WatchDataWriter.swift */,
 			);
 			name = Shared;
@@ -700,6 +703,7 @@
 				B8576C24C7C4378C8CFDBDB7 /* WeekScheduleView.swift in Sources */,
 				258FADEA898375E1A69DD14A /* HealthKitManager.swift in Sources */,
 				F55E0699744032DF4F2ED5DD /* WatchDataExtensions.swift in Sources */,
+				C597EE3A5572BC2A722B49AD /* WatchScheduleStore.swift in Sources */,
 				743476D96301A6064A74C2B0 /* WatchDataWriter.swift in Sources */,
 				4A295588D2D4A1719FCDA9C6 /* WidgetDataReader.swift in Sources */,
 			);

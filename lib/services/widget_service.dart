@@ -32,6 +32,7 @@ class WidgetService {
   static const String keySleepHours = 'widget_sleep_hours';
   static const String keySleepQuality = 'widget_sleep_quality';
   static const String keyWatchEnergyPending = 'watch_energy_pending';
+  static const String keyWatchShiftPending = 'watch_shift_pending';
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -131,6 +132,32 @@ class WidgetService {
       await HomeWidget.saveWidgetData(keySleepQuality, sleepQuality);
     } catch (e) {
       if (kDebugMode) debugPrint('[WidgetService] sleep update failed: $e');
+    }
+  }
+
+  /// Shift changes queued by the watch, oldest first.
+  ///
+  /// The watch has no database of its own, so it appends to a pending list in
+  /// the shared App Group and the phone applies them on its next sync.
+  Future<List<Map<String, dynamic>>> readWatchShiftChanges() async {
+    try {
+      final raw =
+          await HomeWidget.getWidgetData<String>(keyWatchShiftPending);
+      if (raw == null || raw.isEmpty) return [];
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return [];
+      return decoded.whereType<Map>().map(Map<String, dynamic>.from).toList();
+    } catch (e) {
+      if (kDebugMode) debugPrint('[WidgetService] read watch shifts failed: $e');
+      return [];
+    }
+  }
+
+  Future<void> clearWatchShiftChanges() async {
+    try {
+      await HomeWidget.saveWidgetData(keyWatchShiftPending, '');
+    } catch (e) {
+      if (kDebugMode) debugPrint('[WidgetService] clear watch shifts failed: $e');
     }
   }
 

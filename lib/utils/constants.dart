@@ -12,6 +12,15 @@ class AppConstants {
   static const String shiftNight = 'night';
   static const String shiftOff = 'off';
 
+  /// Every valid shift type. Used to validate values arriving from outside the
+  /// app, such as a shift change queued by the watch.
+  static const List<String> shiftTypes = [
+    shiftDay,
+    shiftEvening,
+    shiftNight,
+    shiftOff,
+  ];
+
   // Default shift times
   static const Map<String, Map<String, String>> defaultShiftTimes = {
     'day': {'start': '06:00', 'end': '14:00'},

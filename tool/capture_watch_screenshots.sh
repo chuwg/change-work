@@ -31,6 +31,9 @@ if [ -z "$UDID" ]; then
 fi
 echo "device: $DEVICE_NAME ($UDID)"
 
+# Single-arch: building this scheme drags in Runner, whose Flutter run-script
+# compares the framework's architectures as an ordered string and fails on a
+# universal simulator build.
 # Address the simulator by id. Naming it implies OS:latest, which resolves to
 # whatever SDK the installed Xcode ships — and that fails whenever the matching
 # simulator runtime has not been downloaded (common right after an Xcode update).
@@ -38,7 +41,8 @@ echo "building…"
 xcodebuild -workspace "$(dirname "$0")/../ios/Runner.xcworkspace" \
   -scheme ChangeWatch \
   -destination "id=$UDID" \
-  -configuration Debug CODE_SIGNING_ALLOWED=NO build >/dev/null
+  -configuration Debug CODE_SIGNING_ALLOWED=NO \
+  ONLY_ACTIVE_ARCH=YES ARCHS=arm64 build >/dev/null
 APP=$(find ~/Library/Developer/Xcode/DerivedData/Runner-*/Build/Products/Debug-watchsimulator \
   -maxdepth 1 -name "ChangeWatch.app" -print0 | xargs -0 ls -td | head -1)
 
