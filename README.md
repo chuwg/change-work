@@ -34,7 +34,7 @@
 
 ### 2. 수면 품질 트래커
 - **HealthKit/Health Connect 자동 동기화** (Apple Watch 우선, 수동 입력 자동 대체)
-- **백그라운드 자동 동기화**: 앱을 열지 않아도 HealthKit background delivery로 수면 데이터 자동 수집
+- 앱을 열거나 컨디션·홈 탭으로 돌아올 때 HealthKit에서 자동 동기화
 - 취침/기상 시간 기록 (수동 입력은 백업 수단)
 - Apple Watch 수면 단계 데이터 연동 (깊은 수면, 얕은 수면, REM, 각성)
 - 5단계 수면 품질 평가 (최악~최고)
@@ -474,11 +474,8 @@ flutter build apk
 - HealthSummaryView 전면 개편: 컨디션 스코어 + 수면 분석 + 걸음 진행바 + 심박수
 - Watch→iPhone 에너지 기록 동기화 (watch_energy_pending → Flutter DB 자동 반영)
 
-**HealthKit Background Delivery**
-- iOS AppDelegate에 HealthKit observer query + background delivery 등록
-- 수면/걸음 데이터가 새로 기록되면 앱 미실행 상태에서도 자동 수집
-- BGProcessingTask로 1시간 주기 백그라운드 동기화 스케줄링
-- Info.plist에 UIBackgroundModes (fetch, processing) 추가
+**HealthKit Background Delivery** — 1.0.13에서 제거
+- 동기화 설정을 App Group에서 찾았지만 shared_preferences는 `UserDefaults.standard`에 저장해 한 번도 켜지지 않았고, 켜져도 결과를 읽는 곳이 없었음. 포그라운드 동기화로 충분해 제거.
 
 **버그 수정**
 - 수면 기록 취침시간 자동 보정: bedTime > wakeTime일 때 전날로 조정 (음수 수면시간 버그)
@@ -531,9 +528,9 @@ flutter build apk
 - [x] ~~에너지 기록 간소화 (홈 퀵 입력)~~ ✅ 완료
 - [x] ~~Apple Watch 자동 건강 동기화 (수면/에너지/걸음/심박 자동 수집)~~ ✅ 완료
 - [x] ~~Watch 컨디션 점수 표시 (수면+에너지+활동 기반)~~ ✅ 완료
-- [x] ~~HealthKit Background Delivery (백그라운드 자동 동기화)~~ ✅ 완료
-- [x] ~~Watch→iPhone 에너지 기록 동기화~~ ✅ 완료
-- [ ] Apple Watch 컴패니언 앱 배포 (개발 완료, 배포 준비 중)
+- [x] ~~HealthKit Background Delivery~~ — 실제로 동작한 적 없어 1.0.13에서 제거
+- [x] ~~Watch↔iPhone 동기화~~ ✅ 1.0.13에서 WatchConnectivity로 재구현 (이전 App Group 방식은 기기 간 공유가 안 돼 동작하지 않았음)
+- [x] ~~Apple Watch 컴패니언 앱 배포~~ ✅ 1.0.10부터 포함
 - [ ] 월간 리포트 (월간 추이 분석, PDF 내보내기)
 - [ ] 클라우드 백업 (Firebase/Supabase)
 - [ ] 근무 교환 마켓플레이스 (동료 간 근무일 교환)
