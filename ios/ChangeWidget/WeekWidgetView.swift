@@ -29,15 +29,21 @@ struct WeekWidgetView: View {
                 }
             }
 
-            // D-day
-            if entry.daysUntilOff > 0 {
-                HStack(spacing: 4) {
-                    Text("다음 휴무")
-                        .font(.system(size: 11))
-                        .foregroundColor(Color(white: 0.5))
-                    Text("D-\(entry.daysUntilOff)")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(ShiftType.off.color)
+            HStack(spacing: 12) {
+                if let event = entry.nextEvent {
+                    NextShiftCountdown(event: event, now: entry.date)
+                }
+
+                // D-day
+                if entry.daysUntilOff > 0 {
+                    HStack(spacing: 4) {
+                        Text("다음 휴무")
+                            .font(.system(size: 11))
+                            .foregroundColor(Color(white: 0.5))
+                        Text("D-\(entry.daysUntilOff)")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(ShiftType.off.color)
+                    }
                 }
             }
 

@@ -26,6 +26,10 @@ struct ShiftWidgetView: View {
 
             Spacer()
 
+            if let event = entry.nextEvent {
+                NextShiftCountdown(event: event, now: entry.date, compact: true)
+            }
+
             // Days until off
             if entry.daysUntilOff > 0 {
                 HStack(spacing: 4) {

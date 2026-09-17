@@ -67,6 +67,21 @@ struct DayShift: Identifiable {
     }
 }
 
+/// A shift pinned to real start/end instants.
+struct ShiftEvent {
+    let shift: DayShift
+    let start: Date
+    let end: Date
+    /// True when [start] has passed and the countdown is to the end.
+    let inProgress: Bool
+
+    /// What the countdown counts toward.
+    var target: Date { inProgress ? end : start }
+
+    /// "출근까지" / "퇴근까지".
+    var countdownLabel: String { inProgress ? "퇴근까지" : "출근까지" }
+}
+
 class WidgetDataReader {
     static let appGroupId = "group.com.change.app.change"
 
@@ -82,36 +97,35 @@ class WidgetDataReader {
     /// keeps the widget, the watch app and the complication correct across a
     /// day rollover even if the phone is never opened. The flat keys remain as
     /// a fallback for data written by an older build.
-    static func readTodayShift() -> DayShift? {
+    static func readTodayShift(at now: Date = Date()) -> DayShift? {
         guard let week = storedWeekShifts() else { return nil }
-        let today = Date()
         return week.first {
-            Calendar.current.isDate($0.date, inSameDayAs: today)
+            Calendar.current.isDate($0.date, inSameDayAs: now)
         }
     }
 
-    static func readTodayType() -> ShiftType {
-        if let today = readTodayShift() { return today.type }
+    static func readTodayType(at now: Date = Date()) -> ShiftType {
+        if let today = readTodayShift(at: now) { return today.type }
         guard let raw = defaults?.string(forKey: "widget_today_shift_type") else {
             return .none
         }
         return ShiftType(rawValue: raw) ?? .none
     }
 
-    static func readTodayLabel() -> String {
-        if let today = readTodayShift() { return today.label }
+    static func readTodayLabel(at now: Date = Date()) -> String {
+        if let today = readTodayShift(at: now) { return today.label }
         return defaults?.string(forKey: "widget_today_shift_label") ?? "미등록"
     }
 
-    static func readTodayStart() -> String {
-        if let today = readTodayShift(), !today.start.isEmpty {
+    static func readTodayStart(at now: Date = Date()) -> String {
+        if let today = readTodayShift(at: now), !today.start.isEmpty {
             return today.start
         }
         return defaults?.string(forKey: "widget_today_shift_start") ?? ""
     }
 
-    static func readTodayEnd() -> String {
-        if let today = readTodayShift(), !today.end.isEmpty {
+    static func readTodayEnd(at now: Date = Date()) -> String {
+        if let today = readTodayShift(at: now), !today.end.isEmpty {
             return today.end
         }
         return defaults?.string(forKey: "widget_today_shift_end") ?? ""
@@ -119,9 +133,9 @@ class WidgetDataReader {
 
     /// Days until the next off day, counted from the dated week list so it too
     /// survives a day rollover. -1 means "none within the stored window".
-    static func readDaysUntilOff() -> Int {
+    static func readDaysUntilOff(at now: Date = Date()) -> Int {
         if let week = storedWeekShifts() {
-            let today = Calendar.current.startOfDay(for: Date())
+            let today = Calendar.current.startOfDay(for: now)
             for entry in week where entry.type == .off {
                 let day = Calendar.current.startOfDay(for: entry.date)
                 guard let diff = Calendar.current.dateComponents(
@@ -174,11 +188,69 @@ class WidgetDataReader {
         }
     }
 
-    static func readTimeString() -> String {
-        let start = readTodayStart()
-        let end = readTodayEnd()
+    static func readTimeString(at now: Date = Date()) -> String {
+        let start = readTodayStart(at: now)
+        let end = readTodayEnd(at: now)
         if start.isEmpty || end.isEmpty { return "" }
         return "\(start) - \(end)"
+    }
+
+    // MARK: - Next shift
+
+    /// The shift the user should be thinking about at [now]: the one in
+    /// progress, or else the next one to start. Off days and days without
+    /// times are skipped, so on a day off this already points at the next
+    /// working day.
+    static func nextShiftEvent(at now: Date = Date()) -> ShiftEvent? {
+        guard let week = storedWeekShifts() else { return nil }
+        return nextShiftEvent(in: week, at: now)
+    }
+
+    /// Same, over a schedule the caller already holds — the watch app passes
+    /// its store's week so an edit made on the watch counts immediately.
+    static func nextShiftEvent(in week: [DayShift], at now: Date) -> ShiftEvent? {
+        shiftEvents(in: week).first { now < $0.end }
+            .map { event in
+                ShiftEvent(shift: event.shift, start: event.start, end: event.end,
+                           inProgress: now >= event.start)
+            }
+    }
+
+    /// Every instant at which `nextShiftEvent` changes answer — each shift's
+    /// start and end — so a widget timeline can switch "출근까지" to "퇴근까지"
+    /// exactly on time instead of at the next midnight.
+    static func shiftBoundaries(after now: Date, within interval: TimeInterval) -> [Date] {
+        guard let week = storedWeekShifts() else { return [] }
+        let limit = now.addingTimeInterval(interval)
+        return shiftEvents(in: week)
+            .flatMap { [$0.start, $0.end] }
+            .filter { $0 > now && $0 <= limit }
+    }
+
+    private static func shiftEvents(in week: [DayShift]) -> [ShiftEvent] {
+        let calendar = Calendar.current
+        return week
+            .filter { [.day, .evening, .night].contains($0.type) }
+            .compactMap { day -> ShiftEvent? in
+                guard let start = time(day.start, on: day.date, calendar: calendar),
+                      var end = time(day.end, on: day.date, calendar: calendar)
+                else { return nil }
+                // A 22:00–06:00 night shift ends on the following day.
+                if end <= start {
+                    end = calendar.date(byAdding: .day, value: 1, to: end) ?? end
+                }
+                return ShiftEvent(shift: day, start: start, end: end, inProgress: false)
+            }
+            .sorted { $0.start < $1.start }
+    }
+
+    private static func time(_ hhmm: String, on day: Date, calendar: Calendar) -> Date? {
+        let parts = hhmm.split(separator: ":")
+        guard parts.count >= 2, let h = Int(parts[0]), let m = Int(parts[1]) else {
+            return nil
+        }
+        return calendar.date(bySettingHour: h, minute: m, second: 0,
+                             of: calendar.startOfDay(for: day))
     }
 
     private static func generatePlaceholderWeek() -> [DayShift] {

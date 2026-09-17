@@ -1,35 +1,32 @@
 import SwiftUI
 
+/// Ring countdown to the next shift boundary: time to leave before a shift,
+/// time left during one.
+///
+/// Driven by the store's dated week rather than today's flat keys, so a night
+/// shift that started yesterday is still counted down after midnight, and a
+/// day off points at the next working day instead of a dead end.
 struct ShiftTimerView: View {
-    private let shiftType = WidgetDataReader.readTodayType()
-    private let shiftLabel = WidgetDataReader.readTodayLabel()
-    private let startStr = WidgetDataReader.readTodayStart()
-    private let endStr = WidgetDataReader.readTodayEnd()
+    @StateObject private var store = WatchScheduleStore.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        if shiftType == .off {
-            offDayView
-        } else if shiftType == .none || startStr.isEmpty || endStr.isEmpty {
-            noDataView
-        } else {
-            timerView
+        TimelineView(.periodic(from: Date(), by: 60)) { timeline in
+            let now = timeline.date
+            Group {
+                if let event = WidgetDataReader.nextShiftEvent(in: store.week, at: now) {
+                    timerView(event: event, now: now)
+                } else {
+                    noDataView
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(red: 0.1, green: 0.08, blue: 0.07))
         }
-    }
-
-    private var offDayView: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "house.fill")
-                .font(.system(size: 32))
-                .foregroundColor(ShiftType.off.color)
-            Text("오늘 휴무")
-                .font(.system(size: 18, weight: .bold))
-                .foregroundColor(.white)
-            Text("푹 쉬세요!")
-                .font(.system(size: 13))
-                .foregroundColor(Color(white: 0.5))
+        .onAppear { store.refresh() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { store.refresh() }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(red: 0.1, green: 0.08, blue: 0.07))
     }
 
     private var noDataView: some View {
@@ -37,175 +34,94 @@ struct ShiftTimerView: View {
             Image(systemName: "clock")
                 .font(.system(size: 28))
                 .foregroundColor(Color(white: 0.4))
-            Text("근무 정보 없음")
+            Text("예정된 근무 없음")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(Color(white: 0.6))
-            Text("앱에서 근무를 등록해주세요")
+            Text("아이폰 앱에서 근무를 등록해주세요")
                 .font(.system(size: 12))
                 .foregroundColor(Color(white: 0.4))
+                .multilineTextAlignment(.center)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(red: 0.1, green: 0.08, blue: 0.07))
     }
 
-    private var timerView: some View {
-        TimelineView(.periodic(from: Date(), by: 60)) { timeline in
-            let now = timeline.date
-            let (start, end) = parseTimes(now: now)
-            let status = timerStatus(now: now, start: start, end: end)
+    private func timerView(event: ShiftEvent, now: Date) -> some View {
+        let type = event.shift.type
+        let progress: Double = {
+            guard event.inProgress else { return 0 }
+            let total = event.end.timeIntervalSince(event.start)
+            return total > 0 ? min(max(now.timeIntervalSince(event.start) / total, 0), 1) : 0
+        }()
 
-            VStack(spacing: 10) {
-                // Shift info
-                HStack(spacing: 6) {
-                    Image(systemName: shiftType.icon)
-                        .font(.system(size: 14))
-                        .foregroundColor(shiftType.color)
-                    Text(shiftLabel)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.white)
-                }
-
-                // Progress ring, drawn directly rather than with a scaled-up
-                // Gauge. `.accessoryCircular` is sized for a watch-face
-                // complication — its centre label area only fits a couple of
-                // characters, and `.scaleEffect` enlarges the overflow along
-                // with everything else instead of re-laying it out, so the
-                // remaining-time text used to sit on top of the ring.
-                // Progress ring, drawn directly rather than with a scaled-up
-                // Gauge. `.accessoryCircular` is sized for a watch-face
-                // complication — its centre label area only fits a couple of
-                // characters, and `.scaleEffect` enlarges the overflow along
-                // with everything else instead of re-laying it out, so the
-                // remaining-time text used to sit on top of the ring.
-                //
-                // GeometryReader takes whatever the VStack has left and the
-                // ring is sized from it, so the same layout holds from a 40mm
-                // SE up to a 49mm Ultra without per-device tweaks.
-                GeometryReader { geo in
-                    let d = min(geo.size.width, geo.size.height)
-
-                    ZStack {
-                        Circle()
-                            .stroke(shiftType.color.opacity(0.2),
-                                    lineWidth: Self.ringWidth)
-
-                        Circle()
-                            .trim(from: 0, to: status.progress)
-                            .stroke(
-                                shiftType.color,
-                                style: StrokeStyle(lineWidth: Self.ringWidth,
-                                                   lineCap: .round)
-                            )
-                            .rotationEffect(.degrees(-90))
-
-                        VStack(spacing: 2) {
-                            Text(status.timeText)
-                                .font(.system(size: d * 0.20,
-                                              weight: .bold,
-                                              design: .monospaced))
-                                .foregroundColor(.white)
-                            Text(status.label)
-                                .font(.system(size: d * 0.075))
-                                .foregroundColor(Color(white: 0.55))
-                        }
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                        // Keep the text off the stroke on every watch size.
-                        .padding(.horizontal, Self.ringWidth + d * 0.06)
-                    }
-                    .frame(width: d, height: d)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-                .frame(maxWidth: 160)
-
-                // Time range
-                Text("\(startStr) → \(endStr)")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(white: 0.45))
+        return VStack(spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: type.icon)
+                    .font(.system(size: 14))
+                    .foregroundColor(type.color)
+                Text(dayPrefix(event: event, now: now) + type.label)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(red: 0.1, green: 0.08, blue: 0.07))
+
+            // Ring drawn directly: a scaled-up `.accessoryCircular` Gauge
+            // overflowed its tiny centre label onto the stroke. GeometryReader
+            // sizes it to whatever space is left, from 40mm up to Ultra.
+            GeometryReader { geo in
+                let d = min(geo.size.width, geo.size.height)
+
+                ZStack {
+                    Circle()
+                        .stroke(type.color.opacity(0.2), lineWidth: Self.ringWidth)
+
+                    Circle()
+                        .trim(from: 0, to: progress)
+                        .stroke(type.color,
+                                style: StrokeStyle(lineWidth: Self.ringWidth, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+
+                    VStack(spacing: 2) {
+                        Text(formatInterval(event.target.timeIntervalSince(now)))
+                            .font(.system(size: d * 0.20, weight: .bold, design: .monospaced))
+                            .foregroundColor(.white)
+                        Text(event.countdownLabel)
+                            .font(.system(size: d * 0.075))
+                            .foregroundColor(Color(white: 0.55))
+                    }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .padding(.horizontal, Self.ringWidth + d * 0.06)
+                }
+                .frame(width: d, height: d)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .frame(maxWidth: 160)
+
+            Text("\(event.shift.start) → \(event.shift.end)")
+                .font(.system(size: 12))
+                .foregroundColor(Color(white: 0.45))
         }
+        .padding(12)
     }
 
     private static let ringWidth: CGFloat = 12
 
-    private struct TimerStatus {
-        let progress: Double
-        let timeText: String
-        let label: String
-    }
-
-    private func parseTimes(now: Date) -> (Date, Date) {
+    private func dayPrefix(event: ShiftEvent, now: Date) -> String {
+        if event.inProgress { return "" }
         let calendar = Calendar.current
-        let todayComps = calendar.dateComponents([.year, .month, .day], from: now)
-
-        func makeDate(_ timeStr: String) -> Date {
-            let parts = timeStr.split(separator: ":")
-            guard parts.count == 2,
-                  let h = Int(parts[0]), let m = Int(parts[1])
-            else { return now }
-            var comps = todayComps
-            comps.hour = h
-            comps.minute = m
-            return calendar.date(from: comps) ?? now
-        }
-
-        var start = makeDate(startStr)
-        var end = makeDate(endStr)
-
-        // Handle cross-midnight (night shift)
-        if end <= start {
-            // If now is before start, shift was yesterday's night shift
-            if now < start {
-                start = calendar.date(byAdding: .day, value: -1, to: start)!
-            } else {
-                end = calendar.date(byAdding: .day, value: 1, to: end)!
-            }
-        }
-
-        return (start, end)
-    }
-
-    private func timerStatus(now: Date, start: Date, end: Date) -> TimerStatus {
-        let totalSeconds = end.timeIntervalSince(start)
-
-        if now < start {
-            // Before shift
-            let remaining = start.timeIntervalSince(now)
-            return TimerStatus(
-                progress: 0,
-                timeText: formatInterval(remaining),
-                label: "시작까지"
-            )
-        } else if now >= end {
-            // After shift
-            return TimerStatus(
-                progress: 1.0,
-                timeText: "종료",
-                label: "수고하셨습니다"
-            )
-        } else {
-            // During shift
-            let elapsed = now.timeIntervalSince(start)
-            let remaining = end.timeIntervalSince(now)
-            let progress = totalSeconds > 0 ? elapsed / totalSeconds : 0
-            return TimerStatus(
-                progress: min(max(progress, 0), 1),
-                timeText: formatInterval(remaining),
-                label: "남은 시간"
-            )
-        }
+        if calendar.isDate(event.start, inSameDayAs: now) { return "오늘 " }
+        if let tomorrow = calendar.date(byAdding: .day, value: 1, to: now),
+           calendar.isDate(event.start, inSameDayAs: tomorrow) { return "내일 " }
+        let days = calendar.dateComponents(
+            [.day], from: calendar.startOfDay(for: now),
+            to: calendar.startOfDay(for: event.start)).day ?? 0
+        return "\(days)일 후 "
     }
 
     private func formatInterval(_ seconds: TimeInterval) -> String {
-        let totalMinutes = Int(seconds) / 60
+        let totalMinutes = max(0, Int(seconds) / 60)
         let hours = totalMinutes / 60
         let minutes = totalMinutes % 60
-        if hours > 0 {
-            return String(format: "%d:%02d", hours, minutes)
-        }
+        if hours >= 24 { return "\(hours / 24)일 \(hours % 24)h" }
+        if hours > 0 { return String(format: "%d:%02d", hours, minutes) }
         return "\(minutes)분"
     }
 }

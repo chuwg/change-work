@@ -61,7 +61,14 @@ struct ShiftComplicationEntryView: View {
                 }
             }
 
-            if entry.shiftType == .off {
+            if let event = entry.nextEvent,
+               event.target.timeIntervalSince(entry.date) < 24 * 3600 {
+                // Within a day the countdown is the useful line.
+                (Text("\(event.countdownLabel) ") + Text(event.target, style: .relative))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.secondary)
+                    .monospacedDigit()
+            } else if entry.shiftType == .off {
                 Text("오늘 휴무")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.secondary)
@@ -88,8 +95,12 @@ struct ShiftComplicationEntryView: View {
     }
 
     // MARK: - Inline
+    @ViewBuilder
     private var inlineView: some View {
-        if entry.shiftType == .off {
+        if let event = entry.nextEvent,
+           event.target.timeIntervalSince(entry.date) < 24 * 3600 {
+            Text("\(event.inProgress ? "퇴근" : "출근") ") + Text(event.target, style: .relative)
+        } else if entry.shiftType == .off {
             Text("휴무")
         } else if !entry.timeString.isEmpty {
             Text("\(entry.shiftLabel) \(entry.timeString)")

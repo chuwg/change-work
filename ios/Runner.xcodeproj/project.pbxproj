@@ -30,6 +30,7 @@
 		056F7BD51DC4EDF1188CA67A /* WatchConnectivityBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9509A305C8338170F508B286 /* WatchConnectivityBridge.swift */; };
 		7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */; };
 		7F3692DB5A09B9B20966658E /* ChangeWatchComplicationBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9608B15BA586A9333B13050 /* ChangeWatchComplicationBundle.swift */; };
+		C0FFEE0A1B2C3D4E5F600002 /* LockScreenShiftView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE0A1B2C3D4E5F600001 /* LockScreenShiftView.swift */; };
 		84358BD125394804BCB59C25 /* ShiftWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B7D87CCB7E95517E8BE8081 /* ShiftWidgetView.swift */; };
 		8545147BEBCE3E970D1BCA37 /* ShiftComplicationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32FCCBFED5D0D5AC09D4B653 /* ShiftComplicationProvider.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
@@ -132,6 +133,7 @@
 /* Begin PBXFileReference section */
 		03AB479D7C8FEC3FBE54EDFB /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		048E555E8AA0948D3E7E581D /* ChangeWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChangeWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0FFEE0A1B2C3D4E5F600001 /* LockScreenShiftView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LockScreenShiftView.swift; sourceTree = "<group>"; };
 		0B7D87CCB7E95517E8BE8081 /* ShiftWidgetView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShiftWidgetView.swift; sourceTree = "<group>"; };
 		12A4028CE1B2AEDB562D2BF4 /* ChangeWatch.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = ChangeWatch.entitlements; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
@@ -389,6 +391,7 @@
 				EC4D75569EF726DC3D269AEE /* ChangeWidgetBundle.swift */,
 				45B557A8EBCF67B8D736923A /* ChangeWidgetEntry.swift */,
 				BBA0F86A03FA8232351E0263 /* ChangeWidgetProvider.swift */,
+				C0FFEE0A1B2C3D4E5F600001 /* LockScreenShiftView.swift */,
 				0B7D87CCB7E95517E8BE8081 /* ShiftWidgetView.swift */,
 				9A22BF630C04DB009B29DDC3 /* WeekWidgetView.swift */,
 				15496EDD17C903E09B6B963F /* WidgetDataReader.swift */,
@@ -743,6 +746,7 @@
 				6618175EEE53AB6B327E5D97 /* ChangeWidgetBundle.swift in Sources */,
 				0B50D184E1DCB5B5C47F5914 /* ChangeWidgetEntry.swift in Sources */,
 				A37D96BF08870A46F12D22C2 /* ChangeWidgetProvider.swift in Sources */,
+				C0FFEE0A1B2C3D4E5F600002 /* LockScreenShiftView.swift in Sources */,
 				84358BD125394804BCB59C25 /* ShiftWidgetView.swift in Sources */,
 				B7BCC6C1B113576C21DA2B07 /* WeekWidgetView.swift in Sources */,
 				53447E1E9B8732A3DAD6DEF5 /* WidgetDataReader.swift in Sources */,

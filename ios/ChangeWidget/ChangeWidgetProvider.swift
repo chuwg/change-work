@@ -2,119 +2,68 @@ import WidgetKit
 
 struct ChangeWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> ChangeWidgetEntry {
-        ChangeWidgetEntry(
-            date: Date(),
+        let now = Date()
+        return ChangeWidgetEntry(
+            date: now,
             shiftType: .day,
             shiftLabel: "주간",
             timeString: "06:00 - 14:00",
             daysUntilOff: 2,
-            weekShifts: WidgetDataReader.readWeekShifts()
+            weekShifts: WidgetDataReader.readWeekShifts(),
+            nextEvent: nil
         )
     }
 
     func getSnapshot(in context: Context, completion: @escaping (ChangeWidgetEntry) -> Void) {
-        completion(buildEntry(for: Date()))
+        completion(Self.entry(at: Date()))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<ChangeWidgetEntry>) -> Void) {
-        let calendar = Calendar.current
         let now = Date()
-        let allShifts = WidgetDataReader.readWeekShifts()
+        let dates = Self.entryDates(from: now, days: 7)
+        let entries = dates.map { Self.entry(at: $0) }
 
-        var entries: [ChangeWidgetEntry] = []
-
-        // Generate an entry for each day (today + next 6 days)
-        // Each entry is scheduled at midnight of that day
-        for dayOffset in 0..<7 {
-            guard let entryDate = calendar.date(byAdding: .day, value: dayOffset, to: calendar.startOfDay(for: now)) else { continue }
-
-            // Find the shift for this date from the stored week data
-            let matchingShift = allShifts.first { shift in
-                calendar.isDate(shift.date, inSameDayAs: entryDate)
-            }
-
-            let shiftType = matchingShift?.type ?? .none
-            let shiftLabel = shiftType.label
-
-            // Calculate time string from defaults for today, or from shift data
-            let timeString: String
-            if dayOffset == 0 {
-                timeString = WidgetDataReader.readTimeString()
-            } else {
-                timeString = Self.defaultTimeString(for: shiftType)
-            }
-
-            // Calculate days until next off from this date
-            let daysUntilOff = Self.daysUntilOff(from: dayOffset, shifts: allShifts, calendar: calendar, baseDate: now)
-
-            // Build week shifts relative to this entry date
-            let weekShifts = Self.buildRelativeWeekShifts(
-                from: dayOffset, allShifts: allShifts, calendar: calendar, baseDate: now
-            )
-
-            let entry = ChangeWidgetEntry(
-                date: entryDate,
-                shiftType: shiftType,
-                shiftLabel: shiftLabel,
-                timeString: timeString,
-                daysUntilOff: daysUntilOff,
-                weekShifts: weekShifts
-            )
-            entries.append(entry)
-        }
-
-        // After 7 days, request a new timeline
+        let calendar = Calendar.current
         let refreshDate = calendar.date(byAdding: .day, value: 7, to: calendar.startOfDay(for: now))!
-        let timeline = Timeline(entries: entries, policy: .after(refreshDate))
-        completion(timeline)
+        completion(Timeline(entries: entries, policy: .after(refreshDate)))
     }
 
-    /// Build an entry for a specific date (used by snapshot)
-    private func buildEntry(for date: Date) -> ChangeWidgetEntry {
+    /// Now, every midnight (today's shift / week strip change), and every
+    /// shift start and end (the countdown flips between 출근 and 퇴근). The
+    /// countdown text itself ticks on its own between entries.
+    static func entryDates(from now: Date, days: Int) -> [Date] {
+        let calendar = Calendar.current
+        let midnights = (1..<days).compactMap {
+            calendar.date(byAdding: .day, value: $0, to: calendar.startOfDay(for: now))
+        }
+        let boundaries = WidgetDataReader.shiftBoundaries(
+            after: now, within: TimeInterval(days * 24 * 3600))
+        return Array(Set([now] + midnights + boundaries)).sorted()
+    }
+
+    /// Everything the widget shows, resolved against [date] rather than the
+    /// moment the timeline was built.
+    static func entry(at date: Date) -> ChangeWidgetEntry {
         ChangeWidgetEntry(
             date: date,
-            shiftType: WidgetDataReader.readTodayType(),
-            shiftLabel: WidgetDataReader.readTodayLabel(),
-            timeString: WidgetDataReader.readTimeString(),
-            daysUntilOff: WidgetDataReader.readDaysUntilOff(),
-            weekShifts: WidgetDataReader.readWeekShifts()
+            shiftType: WidgetDataReader.readTodayType(at: date),
+            shiftLabel: WidgetDataReader.readTodayLabel(at: date),
+            timeString: WidgetDataReader.readTimeString(at: date),
+            daysUntilOff: WidgetDataReader.readDaysUntilOff(at: date),
+            weekShifts: weekShifts(from: date),
+            nextEvent: WidgetDataReader.nextShiftEvent(at: date)
         )
     }
 
-    /// Get default time string for a shift type
-    private static func defaultTimeString(for type: ShiftType) -> String {
-        switch type {
-        case .day: return "06:00 - 14:00"
-        case .evening: return "14:00 - 22:00"
-        case .night: return "22:00 - 06:00"
-        case .off, .none: return ""
+    /// Seven days starting at [date], padded when the stored window runs out.
+    private static func weekShifts(from date: Date) -> [DayShift] {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: date)
+        let stored = WidgetDataReader.readWeekShifts()
+        return (0..<7).map { i in
+            let day = calendar.date(byAdding: .day, value: i, to: start)!
+            return stored.first { calendar.isDate($0.date, inSameDayAs: day) }
+                ?? DayShift(date: day, type: .none, label: "-")
         }
-    }
-
-    /// Calculate days until next off from a given day offset
-    private static func daysUntilOff(from dayOffset: Int, shifts: [DayShift], calendar: Calendar, baseDate: Date) -> Int {
-        for i in 1..<(shifts.count - dayOffset) {
-            let idx = dayOffset + i
-            if idx < shifts.count && shifts[idx].type == .off {
-                return i
-            }
-        }
-        return -1
-    }
-
-    /// Build week shifts array relative to a given day offset
-    private static func buildRelativeWeekShifts(from dayOffset: Int, allShifts: [DayShift], calendar: Calendar, baseDate: Date) -> [DayShift] {
-        var result: [DayShift] = []
-        for i in 0..<7 {
-            let idx = dayOffset + i
-            if idx < allShifts.count {
-                result.append(allShifts[idx])
-            } else {
-                // Beyond stored data — show as none
-                let date = calendar.date(byAdding: .day, value: idx, to: calendar.startOfDay(for: baseDate))!
-                result.append(DayShift(date: date, type: .none, label: "-"))
-            }
-        }
-        return result
     }
 }

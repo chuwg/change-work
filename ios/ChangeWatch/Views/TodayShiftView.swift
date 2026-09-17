@@ -15,6 +15,7 @@ struct TodayShiftView: View {
                     title: "오늘 근무가 없어요",
                     detail: "아래로 넘겨 이번 주를 확인하거나 근무를 등록하세요"
                 )
+                nextShiftLine
             case .neverSynced:
                 emptyState(
                     icon: "iphone.gen3",
@@ -57,6 +58,8 @@ struct TodayShiftView: View {
 
         Spacer()
 
+        nextShiftLine
+
         if type == .off {
             HStack(spacing: 4) {
                 Image(systemName: "checkmark.circle.fill")
@@ -74,6 +77,29 @@ struct TodayShiftView: View {
                 Text("D-\(store.daysUntilOff)")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(ShiftType.off.color)
+            }
+        }
+    }
+
+    /// "출근까지 3시간 12분" — the live countdown to the next boundary, which
+    /// on a day off already points at the next working day.
+    @ViewBuilder
+    private var nextShiftLine: some View {
+        // Re-evaluated each minute so it flips to 퇴근 when the shift starts
+        // instead of counting up past the start time.
+        TimelineView(.periodic(from: Date(), by: 60)) { timeline in
+            if let event = WidgetDataReader.nextShiftEvent(in: store.week, at: timeline.date) {
+            HStack(spacing: 4) {
+                Text(event.inProgress ? "퇴근까지" : "\(event.shift.type.label) 출근까지")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(white: 0.5))
+                Text(event.target, style: .relative)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(event.shift.type.color)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
             }
         }
     }

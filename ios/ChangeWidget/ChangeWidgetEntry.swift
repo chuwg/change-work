@@ -7,4 +7,6 @@ struct ChangeWidgetEntry: TimelineEntry {
     let timeString: String
     let daysUntilOff: Int
     let weekShifts: [DayShift]
+    /// The shift in progress or next up, as of [date].
+    let nextEvent: ShiftEvent?
 }
