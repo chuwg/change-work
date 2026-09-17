@@ -1,5 +1,6 @@
 import Foundation
 import WatchConnectivity
+import WidgetKit
 
 /// The watch half of the phone link.
 ///
@@ -82,6 +83,10 @@ final class WatchSessionManager: NSObject {
 
         DispatchQueue.main.async {
             WatchScheduleStore.shared.refresh()
+            // The complication is a separate extension with its own timeline,
+            // set to refresh only at midnight. Without this a shift changed on
+            // the phone stayed wrong on the watch face until the next day.
+            WidgetCenter.shared.reloadAllTimelines()
         }
     }
 }
