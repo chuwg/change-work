@@ -341,6 +341,14 @@ void main() {
   });
 
   group('plan invariants', () {
+    test('planner ids never touch notifications scheduled elsewhere', () {
+      // A collision here silently cancelled the weekly report on every
+      // reschedule.
+      for (final id in NotificationPlanner.reservedIds) {
+        expect(NotificationPlanner.allIds, isNot(contains(id)));
+      }
+    });
+
     test('no notification is ever scheduled in the past', () {
       final now = DateTime(2026, 9, 5, 13, 30);
       final plan = NotificationPlanner.build(

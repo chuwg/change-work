@@ -58,7 +58,13 @@ class NotificationPlanner {
   static const int bedtimeBaseId = 1100;
   static const int preShiftBaseId = 4000;
   static const int caffeineBaseId = 5000;
-  static const int recoveryBaseId = 6000;
+  // 3000 (daily motivation) and 6000 (weekly report) are scheduled outside
+  // the planner; everything in [allIds] gets cancelled on reschedule, so the
+  // planner must never own them.
+  static const int recoveryBaseId = 7000;
+
+  /// Ids scheduled elsewhere that the planner must not collide with.
+  static const List<int> reservedIds = [3000, 6000];
 
   /// Commute home before the recovery guide makes sense to read.
   static const Duration recoveryDelay = Duration(minutes: 30);
