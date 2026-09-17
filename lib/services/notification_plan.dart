@@ -15,6 +15,10 @@ enum NotificationKind {
 
   /// Noon heads-up on the day a night shift starts.
   preShiftNap,
+
+  /// Shortly after a night shift ends: how to sleep and get the rhythm back,
+  /// tailored to what comes next.
+  recovery,
 }
 
 /// One notification the app intends to have sitting in the OS queue.
@@ -54,6 +58,10 @@ class NotificationPlanner {
   static const int bedtimeBaseId = 1100;
   static const int preShiftBaseId = 4000;
   static const int caffeineBaseId = 5000;
+  static const int recoveryBaseId = 6000;
+
+  /// Commute home before the recovery guide makes sense to read.
+  static const Duration recoveryDelay = Duration(minutes: 30);
 
   /// Sleep + prep window subtracted from a shift start to get bedtime.
   static const Duration _sleepWindow = Duration(hours: 8);
@@ -69,6 +77,7 @@ class NotificationPlanner {
           bedtimeBaseId + i,
           preShiftBaseId + i,
           caffeineBaseId + i,
+          recoveryBaseId + i,
         ],
       ];
 
@@ -81,6 +90,7 @@ class NotificationPlanner {
     required Shift? Function(DateTime date) shiftFor,
     bool shiftEnabled = true,
     bool sleepEnabled = true,
+    bool recoveryEnabled = true,
     int minutesBefore = 60,
   }) {
     final today = DateTime(now.year, now.month, now.day);
@@ -169,8 +179,82 @@ class NotificationPlanner {
       }
     }
 
+    if (recoveryEnabled) {
+      // Starts at yesterday: a night shift that began yesterday ends this
+      // morning, and that is exactly the one whose guide is still ahead.
+      int slot = 0;
+      for (int i = -1; i < lookaheadDays && slot < slots; i++) {
+        final date = today.add(Duration(days: i));
+        final shift = shiftFor(date);
+        if (shift == null || shift.type != AppConstants.shiftNight) continue;
+
+        final start = _atTime(date, shift.startTime);
+        var end = _atTime(date, shift.endTime);
+        if (start == null || end == null) continue;
+        if (!end.isAfter(start)) end = end.add(const Duration(days: 1));
+
+        final remindAt = end.add(recoveryDelay);
+        if (!remindAt.isAfter(now)) continue;
+
+        final endDay = DateTime(end.year, end.month, end.day);
+        final next = _nextWorkingShift(end, endDay, shiftFor);
+
+        plan.add(PlannedNotification(
+          id: recoveryBaseId + slot,
+          kind: NotificationKind.recovery,
+          time: remindAt,
+          title: '야간근무 수고했어요',
+          body: recoveryBody(end: end, next: next),
+        ));
+        slot++;
+      }
+    }
+
     plan.sort((a, b) => a.time.compareTo(b.time));
     return plan;
+  }
+
+  /// The first shift starting after [end] within the next two days, as its
+  /// type and start instant.
+  static ({String type, DateTime start})? _nextWorkingShift(
+    DateTime end,
+    DateTime endDay,
+    Shift? Function(DateTime date) shiftFor,
+  ) {
+    for (int d = 0; d <= 1; d++) {
+      final date = endDay.add(Duration(days: d));
+      final shift = shiftFor(date);
+      if (shift == null || shift.type == AppConstants.shiftOff) continue;
+      final start = _atTime(date, shift.startTime);
+      if (start != null && start.isAfter(end)) {
+        return (type: shift.type, start: start);
+      }
+    }
+    return null;
+  }
+
+  /// Recovery advice after a night shift ending at [end], depending on how
+  /// soon and with what the user is back at work.
+  static String recoveryBody({
+    required DateTime end,
+    required ({String type, DateTime start})? next,
+  }) {
+    const home = '퇴근길엔 선글라스로 햇빛을 줄이고, 암막·귀마개로 바로 주무세요.';
+    if (next == null) {
+      return '$home 오늘은 3~4시간만 자고 오후엔 햇빛을 쬐세요. '
+          '밤에 평소 시간에 자면 리듬이 빨리 돌아와요.';
+    }
+    final gap = next.start.difference(end).inHours;
+    if (next.type == AppConstants.shiftNight) {
+      return '$home 오늘 밤도 야간이니 7시간은 충분히 자두세요. '
+          '카페인은 출근 직후에만!';
+    }
+    if (gap < 16) {
+      return '$home ${gap}시간 뒤 ${_shiftLabel(next.type)} 근무라 '
+          '지금 최대한 길게 자고, 출근 전 20분 낮잠을 더하세요.';
+    }
+    return '$home 오늘은 3~4시간만 자고 저녁엔 조금 일찍 주무세요. '
+        '내일 ${_shiftLabel(next.type)} 근무 준비가 수월해져요.';
   }
 
   /// Recommended bedtime for the shift on [shiftDate].
@@ -243,6 +327,8 @@ extension NotificationKindLabel on NotificationKind {
         return '카페인 마감';
       case NotificationKind.preShiftNap:
         return '야간근무 준비';
+      case NotificationKind.recovery:
+        return '회복 가이드';
     }
   }
 }

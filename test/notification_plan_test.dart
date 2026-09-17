@@ -262,6 +262,84 @@ void main() {
     });
   });
 
+  group('night-shift recovery guide', () {
+    test('fires 30 minutes after the night shift ends, the next morning', () {
+      final now = DateTime(2026, 9, 5, 8, 0);
+      final plan = NotificationPlanner.build(
+        now: now,
+        shiftFor: scheduleOf(now, {0: AppConstants.shiftNight}),
+      );
+      expect(firstOfKind(plan, NotificationKind.recovery)!.time,
+          DateTime(2026, 9, 6, 6, 30));
+    });
+
+    test('covers the night shift that started yesterday and ends today', () {
+      final now = DateTime(2026, 9, 5, 3, 0); // mid-shift
+      final plan = NotificationPlanner.build(
+        now: now,
+        shiftFor: scheduleOf(now, {-1: AppConstants.shiftNight}),
+      );
+      expect(firstOfKind(plan, NotificationKind.recovery)!.time,
+          DateTime(2026, 9, 5, 6, 30));
+    });
+
+    test('is not scheduled once it has passed', () {
+      final now = DateTime(2026, 9, 5, 9, 0);
+      final plan = NotificationPlanner.build(
+        now: now,
+        shiftFor: scheduleOf(now, {-1: AppConstants.shiftNight}),
+      );
+      expect(ofKind(plan, NotificationKind.recovery), isEmpty);
+    });
+
+    test('only follows night shifts', () {
+      final now = DateTime(2026, 9, 5, 0, 0);
+      final plan = NotificationPlanner.build(
+        now: now,
+        shiftFor: scheduleOf(now, {
+          0: AppConstants.shiftDay,
+          1: AppConstants.shiftEvening,
+          2: AppConstants.shiftOff,
+        }),
+      );
+      expect(ofKind(plan, NotificationKind.recovery), isEmpty);
+    });
+
+    test('advice depends on what comes next', () {
+      final now = DateTime(2026, 9, 5, 8, 0);
+      String bodyFor(Map<int, String> schedule) => firstOfKind(
+            NotificationPlanner.build(
+                now: now, shiftFor: scheduleOf(now, schedule)),
+            NotificationKind.recovery,
+          )!
+              .body;
+
+      // Another night tonight: bank a full sleep.
+      expect(
+        bodyFor({0: AppConstants.shiftNight, 1: AppConstants.shiftNight}),
+        contains('오늘 밤도 야간'),
+      );
+      // Evening shift the same afternoon: quick turnaround warning.
+      expect(
+        bodyFor({0: AppConstants.shiftNight, 1: AppConstants.shiftEvening}),
+        contains('8시간 뒤 오후 근무'),
+      );
+      // Nothing soon: short sleep, reset to a normal night.
+      expect(bodyFor({0: AppConstants.shiftNight}), contains('3~4시간'));
+    });
+
+    test('recoveryEnabled: false drops only the recovery guide', () {
+      final now = DateTime(2026, 9, 5, 8, 0);
+      final plan = NotificationPlanner.build(
+        now: now,
+        shiftFor: scheduleOf(now, {0: AppConstants.shiftNight}),
+        recoveryEnabled: false,
+      );
+      expect(ofKind(plan, NotificationKind.recovery), isEmpty);
+      expect(ofKind(plan, NotificationKind.shiftStart), isNotEmpty);
+    });
+  });
+
   group('plan invariants', () {
     test('no notification is ever scheduled in the past', () {
       final now = DateTime(2026, 9, 5, 13, 30);

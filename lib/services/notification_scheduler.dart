@@ -31,7 +31,9 @@ class NotificationScheduler {
     final window = <DateTime, Shift?>{};
     final missing = <DateTime>[];
 
-    for (int i = 0; i <= NotificationPlanner.lookaheadDays; i++) {
+    // From yesterday: a night shift that started yesterday ends this morning,
+    // and its recovery guide is still ahead.
+    for (int i = -1; i <= NotificationPlanner.lookaheadDays; i++) {
       final date = today.add(Duration(days: i));
       final key = DateTime(date.year, date.month, date.day);
       final shift = schedule.getShiftForDate(key);
@@ -68,6 +70,7 @@ class NotificationScheduler {
       shiftFor: (date) => window[DateTime(date.year, date.month, date.day)],
       shiftEnabled: prefs.getBool(AppConstants.shiftReminderKey) ?? true,
       sleepEnabled: prefs.getBool(AppConstants.sleepReminderKey) ?? true,
+      recoveryEnabled: prefs.getBool(AppConstants.recoveryGuideKey) ?? true,
       minutesBefore: prefs.getInt(AppConstants.reminderMinutesKey) ?? 60,
     );
   }

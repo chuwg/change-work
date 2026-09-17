@@ -31,6 +31,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _sleepReminder = true;
   bool _shiftReminder = true;
+  bool _recoveryGuide = true;
   bool _motivationEnabled = false;
   bool _calendarSync = false;
   int _reminderMinutes = 60;
@@ -55,6 +56,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     setState(() {
       _sleepReminder = prefs.getBool(AppConstants.sleepReminderKey) ?? true;
       _shiftReminder = prefs.getBool(AppConstants.shiftReminderKey) ?? true;
+      _recoveryGuide = prefs.getBool(AppConstants.recoveryGuideKey) ?? true;
       _motivationEnabled =
           prefs.getBool(AppConstants.motivationEnabledKey) ?? false;
       _calendarSync = prefs.getBool(AppConstants.calendarSyncKey) ?? false;
@@ -77,6 +79,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(AppConstants.shiftReminderKey, value);
     setState(() => _shiftReminder = value);
+    await NotificationScheduler.rescheduleForSchedule(
+        ref.read(scheduleProvider));
+  }
+
+  Future<void> _saveRecoveryGuide(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.recoveryGuideKey, value);
+    setState(() => _recoveryGuide = value);
     await NotificationScheduler.rescheduleForSchedule(
         ref.read(scheduleProvider));
   }
@@ -407,6 +417,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     subtitle: '출근 전 미리 알림',
                     value: _shiftReminder,
                     onChanged: (v) => _saveShiftReminder(v),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _buildSwitchTile(
+                    icon: Icons.self_improvement_rounded,
+                    title: '야간근무 회복 가이드',
+                    subtitle: '퇴근 후 다음 근무에 맞춘 수면·리듬 회복 안내',
+                    value: _recoveryGuide,
+                    onChanged: (v) => _saveRecoveryGuide(v),
                   ),
                   const Divider(height: 1, indent: 56),
                   _buildSwitchTile(

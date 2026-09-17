@@ -419,6 +419,8 @@ class _NotificationStatusScreenState
         return AppTheme.warning;
       case NotificationKind.preShiftNap:
         return AppTheme.info;
+      case NotificationKind.recovery:
+        return AppTheme.success;
     }
   }
 

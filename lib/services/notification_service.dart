@@ -326,6 +326,9 @@ class NotificationService {
             high: false);
       case NotificationKind.preShiftNap:
         return _details('pre_shift_alert', '근무 준비 알림', '야간/오후 근무 대비 사전 알림');
+      case NotificationKind.recovery:
+        return _details('recovery_guide', '회복 가이드', '야간근무 후 수면·리듬 회복 안내',
+            high: false);
     }
   }
 
