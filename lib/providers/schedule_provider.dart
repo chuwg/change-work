@@ -6,6 +6,7 @@ import '../models/shift.dart';
 import '../models/shift_pattern.dart';
 import '../services/database_service.dart';
 import '../services/widget_service.dart';
+import '../services/calendar_sync_service.dart';
 import '../services/notification_scheduler.dart';
 import '../utils/constants.dart';
 
@@ -92,6 +93,13 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
   ScheduleNotifier(this._db) : super(const ScheduleState());
 
   /// Get shift times for a type, using custom times if set, otherwise defaults.
+  /// Everything downstream of the schedule: OS notifications now, the iOS
+  /// calendar mirror shortly after (debounced, it can be slow).
+  Future<void> _onScheduleChanged() async {
+    await NotificationScheduler.rescheduleForSchedule(state);
+    CalendarSyncService.instance.scheduleSync();
+  }
+
   static Future<Map<String, String>?> getShiftTimes(String type) async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(AppConstants.customShiftTimesKey);
@@ -146,7 +154,7 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
     shiftMap[dateKey] = shift;
     state = state.copyWith(shifts: shiftMap);
     WidgetService.instance.updateWidgetData(state);
-    await NotificationScheduler.rescheduleForSchedule(state);
+    await _onScheduleChanged();
   }
 
   Future<void> applyPattern(
@@ -205,7 +213,7 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
 
     await _db.setSetting('active_pattern_id', pattern.id);
     await _db.setSetting('pattern_start_date', startDate.toIso8601String());
-    await NotificationScheduler.rescheduleForSchedule(state);
+    await _onScheduleChanged();
   }
 
   /// Rebuild the cache from the DB after a bulk write (CSV import): this month
@@ -217,7 +225,7 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
     await loadShiftsForMonth(now.year, now.month);
     final next = DateTime(now.year, now.month + 1, 1);
     await loadShiftsForMonth(next.year, next.month);
-    await NotificationScheduler.rescheduleForSchedule(state);
+    await _onScheduleChanged();
   }
 
   /// Wipe every cached shift (used after a full data reset) and drop the
@@ -225,7 +233,7 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
   Future<void> clearAll() async {
     state = state.copyWith(shifts: {});
     WidgetService.instance.updateWidgetData(state);
-    await NotificationScheduler.rescheduleForSchedule(state);
+    await _onScheduleChanged();
   }
 
   Future<void> removeShift(DateTime date) async {
@@ -237,7 +245,7 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
       shiftMap.remove(dateKey);
       state = state.copyWith(shifts: shiftMap);
       WidgetService.instance.updateWidgetData(state);
-      await NotificationScheduler.rescheduleForSchedule(state);
+      await _onScheduleChanged();
     }
   }
 }

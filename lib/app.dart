@@ -11,6 +11,7 @@ import 'screens/settings/settings_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'services/widget_service.dart';
 import 'services/notification_scheduler.dart';
+import 'services/calendar_sync_service.dart';
 import 'providers/schedule_provider.dart';
 import 'providers/health_sync_provider.dart';
 import 'providers/tab_provider.dart';
@@ -126,6 +127,7 @@ class _MainShellState extends ConsumerState<MainShell>
     _applyDebugInitialTab();
     // Begin receiving shift edits and energy taps from the watch.
     ref.read(healthSyncProvider.notifier).listenToWatch();
+    CalendarSyncService.instance.syncIfStale();
   }
 
   /// Debug-only hook for capturing screenshots of a specific tab.
@@ -163,6 +165,7 @@ class _MainShellState extends ConsumerState<MainShell>
       // to have a second, subtly different copy of that import here, and
       // whichever ran first won because both cleared the same queue.
       ref.read(healthSyncProvider.notifier).autoSync();
+      CalendarSyncService.instance.syncIfStale();
     }
   }
 

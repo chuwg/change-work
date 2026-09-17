@@ -27,6 +27,7 @@
 		6CE5B06DFC09C4DA6E8D0429 /* ShiftTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D7CD08CA50BAD29E407B6E1 /* ShiftTimerView.swift */; };
 		743476D96301A6064A74C2B0 /* WatchDataWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4DE383F0831D7A5377519AD /* WatchDataWriter.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
+		C0FFEE0A1B2C3D4E5F600004 /* CalendarSyncBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FFEE0A1B2C3D4E5F600003 /* CalendarSyncBridge.swift */; };
 		056F7BD51DC4EDF1188CA67A /* WatchConnectivityBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9509A305C8338170F508B286 /* WatchConnectivityBridge.swift */; };
 		7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */; };
 		7F3692DB5A09B9B20966658E /* ChangeWatchComplicationBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9608B15BA586A9333B13050 /* ChangeWatchComplicationBundle.swift */; };
@@ -161,6 +162,7 @@
 		6D56528E7795594AB4E88371 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		C0FFEE0A1B2C3D4E5F600003 /* CalendarSyncBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarSyncBridge.swift; sourceTree = "<group>"; };
 		9509A305C8338170F508B286 /* WatchConnectivityBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchConnectivityBridge.swift; path = WatchConnectivityBridge.swift; sourceTree = "<group>"; };
 		7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		7884E8692EC3CD0000C636F2 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
@@ -354,6 +356,7 @@
 				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
+				C0FFEE0A1B2C3D4E5F600003 /* CalendarSyncBridge.swift */,
 				9509A305C8338170F508B286 /* WatchConnectivityBridge.swift */,
 				7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
@@ -732,6 +735,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
+				C0FFEE0A1B2C3D4E5F600004 /* CalendarSyncBridge.swift in Sources */,
 				056F7BD51DC4EDF1188CA67A /* WatchConnectivityBridge.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */,

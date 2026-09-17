@@ -21,6 +21,9 @@ import UIKit
         if let registrar = self.registrar(forPlugin: "WatchConnectivityBridge") {
             WatchConnectivityBridge.shared.register(with: registrar.messenger())
         }
+        if let registrar = self.registrar(forPlugin: "CalendarSyncBridge") {
+            CalendarSyncBridge.shared.register(with: registrar.messenger())
+        }
 
         // HealthKit is synced from Flutter whenever the app is opened
         // (HealthSyncNotifier.autoSync). There used to be a native background

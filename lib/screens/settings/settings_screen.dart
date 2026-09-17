@@ -18,6 +18,7 @@ import '../../config/routes.dart';
 import 'profile_edit_screen.dart';
 import 'notification_status_screen.dart';
 import 'shift_times_screen.dart';
+import '../../services/calendar_sync_service.dart';
 import '../../services/export_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -31,6 +32,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _sleepReminder = true;
   bool _shiftReminder = true;
   bool _motivationEnabled = false;
+  bool _calendarSync = false;
   int _reminderMinutes = 60;
   int _motivationHour = 7;
   int _motivationMinute = 0;
@@ -55,6 +57,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       _shiftReminder = prefs.getBool(AppConstants.shiftReminderKey) ?? true;
       _motivationEnabled =
           prefs.getBool(AppConstants.motivationEnabledKey) ?? false;
+      _calendarSync = prefs.getBool(AppConstants.calendarSyncKey) ?? false;
       _reminderMinutes = prefs.getInt(AppConstants.reminderMinutesKey) ?? 60;
       _motivationHour = prefs.getInt(AppConstants.motivationHourKey) ?? 7;
       _motivationMinute = prefs.getInt(AppConstants.motivationMinuteKey) ?? 0;
@@ -132,6 +135,44 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     );
     if (result != null) await _saveReminderMinutes(result);
+  }
+
+  Future<void> _setCalendarSync(bool value) async {
+    final messenger = ScaffoldMessenger.of(context);
+    if (!value) {
+      await CalendarSyncService.instance.disable();
+      if (!mounted) return;
+      setState(() => _calendarSync = false);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('캘린더에서 Change 근무 캘린더를 삭제했어요')),
+      );
+      return;
+    }
+
+    setState(() => _calendarSync = true);
+    final result = await CalendarSyncService.instance.enable();
+    if (!mounted) return;
+    switch (result) {
+      case CalendarSyncResult.synced:
+        messenger.showSnackBar(const SnackBar(
+          content: Text('캘린더 앱의 "Change 근무" 캘린더에 근무를 표시했어요'),
+        ));
+      case CalendarSyncResult.denied:
+        setState(() => _calendarSync = false);
+        messenger.showSnackBar(SnackBar(
+          content: const Text('캘린더 접근이 거부되어 있어요. 설정에서 허용해주세요'),
+          action: SnackBarAction(
+            label: '설정 열기',
+            onPressed: () => launchUrl(Uri.parse('app-settings:')),
+          ),
+        ));
+      case CalendarSyncResult.failed:
+      case CalendarSyncResult.unsupported:
+        setState(() => _calendarSync = false);
+        messenger.showSnackBar(
+          const SnackBar(content: Text('캘린더 연동에 실패했어요')),
+        );
+    }
   }
 
   Future<void> _saveMotivation({bool? enabled, int? hour, int? minute}) async {
@@ -484,6 +525,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildHealthSyncSection(),
 
             const SizedBox(height: 24),
+
+            if (CalendarSyncService.instance.isSupported) ...[
+              _buildSectionHeader('캘린더 연동'),
+              const SizedBox(height: 8),
+              Container(
+                decoration: AppTheme.glassCard,
+                child: _buildSwitchTile(
+                  icon: Icons.event_available_rounded,
+                  title: 'iPhone 캘린더에 근무 표시',
+                  subtitle: '"Change 근무" 캘린더로 추가돼요 · 가족과 공유 가능',
+                  value: _calendarSync,
+                  onChanged: _setCalendarSync,
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
 
             // Data management
             _buildSectionHeader('데이터 관리'),

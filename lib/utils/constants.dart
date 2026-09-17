@@ -53,6 +53,7 @@ class AppConstants {
   static const String shiftReminderKey = 'shift_reminder';
   static const String reminderMinutesKey = 'reminder_minutes';
   static const String motivationEnabledKey = 'motivation_enabled';
+  static const String calendarSyncKey = 'calendar_sync_enabled';
   static const String motivationHourKey = 'motivation_hour';
   static const String motivationMinuteKey = 'motivation_minute';
 
