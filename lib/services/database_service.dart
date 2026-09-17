@@ -54,6 +54,7 @@ class DatabaseService {
         start_time TEXT,
         end_time TEXT,
         note TEXT,
+        swap_with TEXT,
         created_at TEXT NOT NULL
       )
     ''');
@@ -183,6 +184,9 @@ class DatabaseService {
       await db.execute(
         'CREATE UNIQUE INDEX idx_shifts_date ON shifts(date)',
       );
+    }
+    if (oldVersion < 6) {
+      await db.execute('ALTER TABLE shifts ADD COLUMN swap_with TEXT');
     }
   }
 

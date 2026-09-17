@@ -36,14 +36,15 @@ class ExportService {
 
     if (allShifts.isNotEmpty) {
       final csv = StringBuffer();
-      csv.writeln('날짜,근무유형,시작시간,종료시간,메모');
+      csv.writeln('날짜,근무유형,시작시간,종료시간,메모,교환');
       for (final s in allShifts) {
         final date = DateFormat('yyyy-MM-dd').format(s.date);
         final type = _shiftTypeLabel(s.type);
         final start = s.startTime ?? '';
         final end = s.endTime ?? '';
         final note = _escapeCsv(s.note ?? '');
-        csv.writeln('$date,$type,$start,$end,$note');
+        final swap = _escapeCsv(s.swapWith ?? '');
+        csv.writeln('$date,$type,$start,$end,$note,$swap');
       }
       final file = File('${dir.path}/change_shifts_$dateStr.csv');
       await file.writeAsString(csv.toString());
@@ -168,6 +169,7 @@ class ExportService {
         final startTime = cols.length > 2 ? cols[2].trim() : null;
         final endTime = cols.length > 3 ? cols[3].trim() : null;
         final note = cols.length > 4 ? cols[4].trim() : null;
+        final swap = cols.length > 5 ? cols[5].trim() : null;
 
         await db.insertShift(Shift(
           id: _uuid.v4(),
@@ -176,6 +178,7 @@ class ExportService {
           startTime: startTime?.isEmpty == true ? null : startTime,
           endTime: endTime?.isEmpty == true ? null : endTime,
           note: note?.isEmpty == true ? null : note,
+          swapWith: swap?.isEmpty == true ? null : swap,
         ));
         count++;
       } catch (_) {}

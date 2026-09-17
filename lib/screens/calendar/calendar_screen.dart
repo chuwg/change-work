@@ -219,32 +219,58 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 ? Border.all(color: AppTheme.primary, width: 2)
                 : null,
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Stack(
         children: [
-          Text(
-            '${date.day}',
-            style: TextStyle(
-              // Dark text on the saturated fills; the palette is light enough
-              // that white would wash out.
-              color: color != null && !outside
-                  ? const Color(0xFF241F1B)
-                  : AppTheme.textSecondary.withValues(alpha: outside ? 0.5 : 1),
-              fontSize: 14,
-              fontWeight:
-                  isToday || isSelected ? FontWeight.bold : FontWeight.w600,
-              height: 1.1,
+          Positioned.fill(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '${date.day}',
+                  style: TextStyle(
+                    // Dark text on the saturated fills; the palette is light enough
+                    // that white would wash out.
+                    color: color != null && !outside
+                        ? const Color(0xFF241F1B)
+                        : AppTheme.textSecondary
+                            .withValues(alpha: outside ? 0.5 : 1),
+                    fontSize: 14,
+                    fontWeight: isToday || isSelected
+                        ? FontWeight.bold
+                        : FontWeight.w600,
+                    height: 1.1,
+                  ),
+                ),
+                if (shift != null && !outside)
+                  Text(
+                    AppHelpers.getShiftShortLabel(shift.type),
+                    style: const TextStyle(
+                      color: Color(0xFF241F1B),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                    ),
+                  ),
+              ],
             ),
           ),
-          if (shift != null && !outside)
-            Text(
-              AppHelpers.getShiftShortLabel(shift.type),
-              style: const TextStyle(
-                color: Color(0xFF241F1B),
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                height: 1.2,
-              ),
+          // Swapped days get a corner mark so a month of trades is visible
+          // at a glance; a plain note gets a smaller dot.
+          if (shift != null && !outside && (shift.isSwapped || shift.hasNote))
+            Positioned(
+              top: 2,
+              right: 3,
+              child: shift.isSwapped
+                  ? const Icon(Icons.swap_horiz_rounded,
+                      size: 11, color: Color(0xFF241F1B))
+                  : Container(
+                      width: 5,
+                      height: 5,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF241F1B),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
             ),
         ],
       ),
@@ -287,7 +313,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     final shift = schedule.getShiftForDate(_selectedDay!);
 
-    return Padding(
+    // Scrollable: with the memo card the detail can outgrow the space left
+    // under a six-week month on a small phone.
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,6 +388,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 10),
+            _buildMemoCard(shift),
           ] else ...[
             Container(
               padding: const EdgeInsets.all(20),
@@ -391,6 +421,157 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         ],
       ),
     );
+  }
+
+  /// Swap partner and note for the selected day, tappable to edit.
+  Widget _buildMemoCard(Shift shift) {
+    final empty = !shift.isSwapped && !shift.hasNote;
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () => _showMemoSheet(shift),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: AppTheme.glassCard,
+        child: empty
+            ? Row(
+                children: [
+                  Icon(Icons.swap_horiz_rounded,
+                      color: AppTheme.textTertiary, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    '근무 교환·메모 추가',
+                    style:
+                        TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                  ),
+                ],
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (shift.isSwapped)
+                    Row(
+                      children: [
+                        Icon(Icons.swap_horiz_rounded,
+                            color: AppTheme.primary, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${shift.swapWith}과(와) 교환',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  if (shift.isSwapped && shift.hasNote)
+                    const SizedBox(height: 6),
+                  if (shift.hasNote)
+                    Text(
+                      shift.note!,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: AppTheme.textSecondary, fontSize: 13),
+                    ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Future<void> _showMemoSheet(Shift shift) async {
+    final swapController = TextEditingController(text: shift.swapWith ?? '');
+    final noteController = TextEditingController(text: shift.note ?? '');
+
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.surfaceDark,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        InputDecoration field(String label, String hint, IconData icon) =>
+            InputDecoration(
+              labelText: label,
+              hintText: hint,
+              prefixIcon: Icon(icon, size: 20),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            );
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+              20, 20, 20, 20 + MediaQuery.viewInsetsOf(ctx).bottom),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${AppHelpers.formatDate(shift.date)} 교환·메모',
+                style: TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: swapController,
+                textInputAction: TextInputAction.next,
+                style: TextStyle(color: AppTheme.textPrimary),
+                decoration:
+                    field('교환한 사람', '예: 김간호사', Icons.swap_horiz_rounded),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: noteController,
+                minLines: 1,
+                maxLines: 3,
+                style: TextStyle(color: AppTheme.textPrimary),
+                decoration:
+                    field('메모', '예: 다음 주 화요일에 갚기로 함', Icons.notes_rounded),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  if (shift.isSwapped || shift.hasNote)
+                    TextButton(
+                      onPressed: () {
+                        swapController.clear();
+                        noteController.clear();
+                        Navigator.pop(ctx, true);
+                      },
+                      child:
+                          Text('지우기', style: TextStyle(color: AppTheme.error)),
+                    ),
+                  const Spacer(),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('저장'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (saved == true) {
+      await ref.read(scheduleProvider.notifier).updateMemo(
+            shift.date,
+            swapWith: swapController.text,
+            note: noteController.text,
+          );
+    }
+    swapController.dispose();
+    noteController.dispose();
   }
 
   /// Anchor for the iPad share popover. iPhone ignores it, but on iPad the

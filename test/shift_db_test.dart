@@ -152,4 +152,14 @@ void main() {
     expect(shifts, hasLength(3));
     expect(shifts.every((s) => s.type == AppConstants.shiftNight), isTrue);
   });
+
+  test('swap partner survives the v6 migration and a round trip', () async {
+    final db = DatabaseService.instance;
+    final date = DateTime(2026, 10, 1);
+    await db.insertShift(
+        Shift(id: 'swap', date: date, type: 'night', swapWith: '김간호사'));
+    final read = await db.getShiftForDate(date);
+    expect(read!.swapWith, '김간호사');
+    expect(read.isSwapped, isTrue);
+  });
 }

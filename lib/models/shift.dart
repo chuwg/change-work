@@ -5,6 +5,9 @@ class Shift {
   final String? startTime;
   final String? endTime;
   final String? note;
+
+  /// Who this day was swapped with, when the user traded shifts.
+  final String? swapWith;
   final DateTime createdAt;
 
   Shift({
@@ -14,6 +17,7 @@ class Shift {
     this.startTime,
     this.endTime,
     this.note,
+    this.swapWith,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -25,9 +29,13 @@ class Shift {
       'start_time': startTime,
       'end_time': endTime,
       'note': note,
+      'swap_with': swapWith,
       'created_at': createdAt.toIso8601String(),
     };
   }
+
+  bool get isSwapped => swapWith != null && swapWith!.isNotEmpty;
+  bool get hasNote => note != null && note!.isNotEmpty;
 
   factory Shift.fromMap(Map<String, dynamic> map) {
     return Shift(
@@ -37,6 +45,7 @@ class Shift {
       startTime: map['start_time'] as String?,
       endTime: map['end_time'] as String?,
       note: map['note'] as String?,
+      swapWith: map['swap_with'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
@@ -48,6 +57,7 @@ class Shift {
     String? startTime,
     String? endTime,
     String? note,
+    String? swapWith,
   }) {
     return Shift(
       id: id ?? this.id,
@@ -56,6 +66,7 @@ class Shift {
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       note: note ?? this.note,
+      swapWith: swapWith ?? this.swapWith,
       createdAt: createdAt,
     );
   }

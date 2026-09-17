@@ -43,12 +43,16 @@ class CalendarEventBuilder {
     final events = <CalendarShiftEvent>[];
     for (final shift in shifts) {
       final date = fmt.format(shift.date);
-      final note = (shift.note?.isNotEmpty ?? false) ? shift.note : null;
+      final note = [
+        if (shift.isSwapped) '${shift.swapWith}과(와) 근무 교환',
+        if (shift.hasNote) shift.note!,
+      ].join('\n');
 
       if (shift.type == AppConstants.shiftOff) {
         // Off days are what family members most want to see, so they go in
         // as all-day events rather than being left out.
-        events.add(CalendarShiftEvent(date: date, title: '휴무', note: note));
+        events.add(CalendarShiftEvent(
+            date: date, title: '휴무', note: note.isEmpty ? null : note));
         continue;
       }
 
@@ -60,7 +64,7 @@ class CalendarEventBuilder {
         title: AppHelpers.getShiftDisplayName(shift.type),
         start: start,
         end: start == null ? null : end,
-        note: note,
+        note: note.isEmpty ? null : note,
       ));
     }
     return events;

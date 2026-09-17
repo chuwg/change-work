@@ -148,7 +148,10 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
       type: type,
       startTime: times?['start'],
       endTime: times?['end'],
-      note: note,
+      // Changing the type (which is usually *why* there is a swap memo) must
+      // not throw the memo away.
+      note: note ?? existing?.note,
+      swapWith: existing?.swapWith,
     );
     await _db.insertShift(shift);
 
@@ -236,6 +239,36 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
     state = state.copyWith(shifts: {});
     WidgetService.instance.updateWidgetData(state);
     await _onScheduleChanged();
+  }
+
+  /// Set or clear the swap partner and note on an existing day. Empty strings
+  /// clear the field.
+  Future<void> updateMemo(
+    DateTime date, {
+    required String swapWith,
+    required String note,
+  }) async {
+    final dateKey = DateTime(date.year, date.month, date.day);
+    final existing = state.shifts[dateKey];
+    if (existing == null) return;
+    final updated = Shift(
+      id: existing.id,
+      date: existing.date,
+      type: existing.type,
+      startTime: existing.startTime,
+      endTime: existing.endTime,
+      note: note.trim().isEmpty ? null : note.trim(),
+      swapWith: swapWith.trim().isEmpty ? null : swapWith.trim(),
+      createdAt: existing.createdAt,
+    );
+    await _db.insertShift(updated);
+    final shiftMap = Map<DateTime, Shift>.from(state.shifts);
+    shiftMap[dateKey] = updated;
+    state = state.copyWith(shifts: shiftMap);
+    // Notifications don't depend on memos, but the calendar mirror and the
+    // backup do.
+    CalendarSyncService.instance.scheduleSync();
+    BackupService.instance.scheduleBackup();
   }
 
   Future<void> removeShift(DateTime date) async {
