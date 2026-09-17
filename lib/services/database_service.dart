@@ -465,6 +465,54 @@ class DatabaseService {
 
   // === Data Management ===
 
+  /// Tables carried by a full backup, in restore order.
+  static const List<String> backupTables = [
+    'shifts',
+    'shift_patterns',
+    'sleep_records',
+    'energy_records',
+    'user_settings',
+    'user_profile',
+  ];
+
+  /// Every row of every backed-up table, as plain column maps.
+  Future<Map<String, List<Map<String, Object?>>>> exportTables() async {
+    final db = await database;
+    return {
+      for (final table in backupTables)
+        table: (await db.query(table))
+            .map((row) => Map<String, Object?>.from(row))
+            .toList(),
+    };
+  }
+
+  /// Replace the backed-up tables with [data] in one transaction, so a failed
+  /// restore leaves the current data untouched.
+  ///
+  /// Columns this schema does not know are dropped rather than failing the
+  /// insert — a backup from a newer app version still restores what it can.
+  Future<void> replaceTables(
+      Map<String, List<Map<String, Object?>>> data) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (final table in backupTables) {
+        final rows = data[table];
+        if (rows == null) continue;
+        final columns = (await txn.rawQuery('PRAGMA table_info($table)'))
+            .map((c) => c['name'] as String)
+            .toSet();
+        await txn.delete(table);
+        for (final row in rows) {
+          final filtered = Map<String, Object?>.fromEntries(
+              row.entries.where((e) => columns.contains(e.key)));
+          if (filtered.isEmpty) continue;
+          await txn.insert(table, filtered,
+              conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+      }
+    });
+  }
+
   Future<void> deleteAllData() async {
     final db = await database;
     await db.delete('shifts');

@@ -6,6 +6,7 @@ import '../models/shift.dart';
 import '../models/shift_pattern.dart';
 import '../services/database_service.dart';
 import '../services/widget_service.dart';
+import '../services/backup_service.dart';
 import '../services/calendar_sync_service.dart';
 import '../services/notification_scheduler.dart';
 import '../utils/constants.dart';
@@ -94,10 +95,11 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
 
   /// Get shift times for a type, using custom times if set, otherwise defaults.
   /// Everything downstream of the schedule: OS notifications now, the iOS
-  /// calendar mirror shortly after (debounced, it can be slow).
+  /// calendar mirror and the iCloud backup shortly after (debounced).
   Future<void> _onScheduleChanged() async {
     await NotificationScheduler.rescheduleForSchedule(state);
     CalendarSyncService.instance.scheduleSync();
+    BackupService.instance.scheduleBackup();
   }
 
   static Future<Map<String, String>?> getShiftTimes(String type) async {

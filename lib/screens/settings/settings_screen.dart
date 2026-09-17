@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
 import '../../providers/energy_provider.dart';
 import '../../providers/health_sync_provider.dart';
+import '../../providers/salary_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/sleep_provider.dart';
@@ -18,6 +19,7 @@ import '../../config/routes.dart';
 import 'profile_edit_screen.dart';
 import 'notification_status_screen.dart';
 import 'shift_times_screen.dart';
+import '../../services/backup_service.dart';
 import '../../services/calendar_sync_service.dart';
 import '../../services/export_service.dart';
 
@@ -34,6 +36,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _recoveryGuide = true;
   bool _motivationEnabled = false;
   bool _calendarSync = false;
+  bool _backupEnabled = true;
+  bool _backupBusy = false;
+  bool? _icloudAvailable;
+  DateTime? _lastBackupAt;
   int _reminderMinutes = 60;
   int _motivationHour = 7;
   int _motivationMinute = 0;
@@ -44,6 +50,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     super.initState();
     _loadPreferences();
     _loadProfile();
+    _loadBackupStatus();
   }
 
   Future<void> _loadProfile() async {
@@ -145,6 +152,101 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     );
     if (result != null) await _saveReminderMinutes(result);
+  }
+
+  Future<void> _loadBackupStatus() async {
+    final backup = BackupService.instance;
+    if (!backup.isSupported) return;
+    final enabled = await backup.isEnabled();
+    final available = await backup.isAvailable();
+    final last = available ? await backup.lastBackupAt() : null;
+    if (!mounted) return;
+    setState(() {
+      _backupEnabled = enabled;
+      _icloudAvailable = available;
+      _lastBackupAt = last;
+    });
+  }
+
+  String get _backupSubtitle {
+    if (_icloudAvailable == null) return '확인 중...';
+    if (_icloudAvailable == false) {
+      return 'iCloud에 로그인하고 iCloud Drive를 켜주세요';
+    }
+    if (_lastBackupAt == null) return '아직 백업이 없어요';
+    return '마지막 백업 ${DateFormat('M월 d일 HH:mm').format(_lastBackupAt!)}';
+  }
+
+  Future<void> _backupNow() async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _backupBusy = true);
+    final ok = await BackupService.instance.backupNow();
+    await _loadBackupStatus();
+    if (!mounted) return;
+    setState(() => _backupBusy = false);
+    messenger.showSnackBar(SnackBar(
+      content: Text(ok ? 'iCloud에 백업했어요' : '백업하지 못했어요. iCloud 상태를 확인해주세요'),
+    ));
+  }
+
+  Future<void> _restoreFromBackup() async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _backupBusy = true);
+    final snapshot = await BackupService.instance.fetch();
+    if (!mounted) return;
+    setState(() => _backupBusy = false);
+    if (snapshot == null) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('iCloud에 백업이 없어요')),
+      );
+      return;
+    }
+
+    final when = DateFormat('yyyy.M.d HH:mm').format(snapshot.createdAt);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surfaceDarkElevated,
+        title: Text('백업에서 복원',
+            style: TextStyle(color: AppTheme.textPrimary)),
+        content: Text(
+          '$when 백업\n'
+          '근무 ${snapshot.count('shifts')}일 · 수면 ${snapshot.count('sleep_records')}건 · '
+          '에너지 ${snapshot.count('energy_records')}건\n\n'
+          '지금 기기의 기록은 이 백업으로 바뀌어요.',
+          style: TextStyle(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('복원', style: TextStyle(color: AppTheme.error)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await BackupService.instance.restore(snapshot);
+      await ref.read(scheduleProvider.notifier).reloadAfterImport();
+      ref.read(sleepProvider.notifier).loadRecords();
+      ref.read(energyProvider.notifier).loadRecords();
+      ref.read(salaryProvider.notifier).loadSettings();
+      await ref.read(themeModeProvider.notifier).reload();
+      await _loadPreferences();
+      await _loadProfile();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('백업에서 복원했어요')),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('복원에 실패했어요. 기존 데이터는 그대로예요')),
+      );
+    }
   }
 
   Future<void> _setCalendarSync(bool value) async {
@@ -555,6 +657,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   subtitle: '"Change 근무" 캘린더로 추가돼요 · 가족과 공유 가능',
                   value: _calendarSync,
                   onChanged: _setCalendarSync,
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            if (BackupService.instance.isSupported) ...[
+              _buildSectionHeader('iCloud 백업'),
+              const SizedBox(height: 8),
+              Container(
+                decoration: AppTheme.glassCard,
+                child: Column(
+                  children: [
+                    _buildSwitchTile(
+                      icon: Icons.cloud_done_rounded,
+                      title: '자동 백업',
+                      subtitle: _backupSubtitle,
+                      value: _backupEnabled,
+                      onChanged: (v) async {
+                        setState(() => _backupEnabled = v);
+                        await BackupService.instance.setEnabled(v);
+                        await _loadBackupStatus();
+                      },
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    _buildActionTile(
+                      icon: Icons.cloud_upload_rounded,
+                      title: _backupBusy ? '처리 중...' : '지금 백업',
+                      subtitle: '근무·수면·에너지 기록과 설정',
+                      onTap: _backupBusy || _icloudAvailable != true
+                          ? () {}
+                          : _backupNow,
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    _buildActionTile(
+                      icon: Icons.settings_backup_restore_rounded,
+                      title: '백업에서 복원',
+                      subtitle: '새 폰이나 앱을 다시 설치했을 때',
+                      onTap: _backupBusy || _icloudAvailable != true
+                          ? () {}
+                          : _restoreFromBackup,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),

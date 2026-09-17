@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config/theme.dart';
 import 'config/routes.dart';
@@ -12,6 +13,7 @@ import 'screens/onboarding/onboarding_screen.dart';
 import 'services/widget_service.dart';
 import 'services/notification_scheduler.dart';
 import 'services/calendar_sync_service.dart';
+import 'services/backup_service.dart';
 import 'providers/schedule_provider.dart';
 import 'providers/health_sync_provider.dart';
 import 'providers/tab_provider.dart';
@@ -40,14 +42,14 @@ class ChangeApp extends ConsumerWidget {
 }
 
 /// Checks if this is the first launch and shows onboarding if needed
-class AppEntryPoint extends StatefulWidget {
+class AppEntryPoint extends ConsumerStatefulWidget {
   const AppEntryPoint({super.key});
 
   @override
-  State<AppEntryPoint> createState() => _AppEntryPointState();
+  ConsumerState<AppEntryPoint> createState() => _AppEntryPointState();
 }
 
-class _AppEntryPointState extends State<AppEntryPoint> {
+class _AppEntryPointState extends ConsumerState<AppEntryPoint> {
   bool _isLoading = true;
   bool _isFirstLaunch = true;
 
@@ -67,12 +69,63 @@ class _AppEntryPointState extends State<AppEntryPoint> {
         _isFirstLaunch = !completed;
         _isLoading = false;
       });
+      if (!completed) _offerRestore();
     } catch (_) {
       // SharedPreferences not available (e.g., web without setup)
       setState(() {
         _isFirstLaunch = false;
         _isLoading = false;
       });
+    }
+  }
+
+  /// On a first launch, a backup in iCloud means this is a reinstall or a new
+  /// phone: offer to bring everything back instead of starting from zero.
+  Future<void> _offerRestore() async {
+    final backup = BackupService.instance;
+    if (!backup.isSupported) return;
+    final snapshot = await backup.fetch();
+    if (snapshot == null || snapshot.recordCount == 0 || !mounted) return;
+    // Onboarding may have been finished while the backup was downloading.
+    if (!_isFirstLaunch) return;
+
+    final when = DateFormat('yyyy.M.d HH:mm').format(snapshot.createdAt);
+    final restore = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('iCloud 백업이 있어요'),
+        content: Text(
+          '$when 백업\n'
+          '근무 ${snapshot.count('shifts')}일 · 수면 ${snapshot.count('sleep_records')}건 · '
+          '에너지 ${snapshot.count('energy_records')}건\n\n'
+          '복원하면 설정까지 그대로 이어서 쓸 수 있어요.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('새로 시작'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('복원'),
+          ),
+        ],
+      ),
+    );
+    if (restore != true || !mounted) return;
+
+    try {
+      await backup.restore(snapshot);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_onboardingCompleteKey, true);
+      await ref.read(themeModeProvider.notifier).reload();
+      if (mounted) setState(() => _isFirstLaunch = false);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('복원에 실패했어요. 설정에서 다시 시도할 수 있어요')),
+        );
+      }
     }
   }
 
@@ -128,6 +181,7 @@ class _MainShellState extends ConsumerState<MainShell>
     // Begin receiving shift edits and energy taps from the watch.
     ref.read(healthSyncProvider.notifier).listenToWatch();
     CalendarSyncService.instance.syncIfStale();
+    BackupService.instance.backupIfStale();
   }
 
   /// Debug-only hook for capturing screenshots of a specific tab.
@@ -166,6 +220,7 @@ class _MainShellState extends ConsumerState<MainShell>
       // whichever ran first won because both cleared the same queue.
       ref.read(healthSyncProvider.notifier).autoSync();
       CalendarSyncService.instance.syncIfStale();
+      BackupService.instance.backupIfStale();
     }
   }
 

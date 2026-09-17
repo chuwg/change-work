@@ -12,6 +12,9 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
     _load();
   }
 
+  /// Re-read the stored mode, e.g. after a backup restore rewrote it.
+  Future<void> reload() => _load();
+
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
