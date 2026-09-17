@@ -393,6 +393,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
+  /// Anchor for the iPad share popover. iPhone ignores it, but on iPad the
+  /// share sheet refuses to open without one.
+  Rect _shareOrigin() {
+    final size = MediaQuery.sizeOf(context);
+    return Rect.fromCenter(
+      center: Offset(size.width / 2, size.height / 2),
+      width: 1,
+      height: 1,
+    );
+  }
+
   Future<void> _exportMonth(ScheduleState schedule) async {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -406,6 +417,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         year: _focusedDay.year,
         month: _focusedDay.month,
         shifts: schedule.shifts,
+        origin: _shareOrigin(),
       );
     } catch (e) {
       if (mounted) {

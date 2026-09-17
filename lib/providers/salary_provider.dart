@@ -258,17 +258,23 @@ class SalaryNotifier extends StateNotifier<SalaryState> {
   double _calcNightHours(DateTime start, DateTime end) {
     final effectiveEnd =
         end.isAfter(start) ? end : end.add(const Duration(days: 1));
-    final nightStart = DateTime(start.year, start.month, start.day, 22, 0);
-    final nightEnd = DateTime(start.year, start.month, start.day + 1, 6, 0);
-
-    final overlapStart = start.isAfter(nightStart) ? start : nightStart;
-    final overlapEnd =
-        effectiveEnd.isBefore(nightEnd) ? effectiveEnd : nightEnd;
-
-    if (overlapEnd.isAfter(overlapStart)) {
-      return overlapEnd.difference(overlapStart).inMinutes / 60.0;
+    // Two 22:00–06:00 windows can touch a shift: the one ending this morning
+    // (an early 04:00 start) and the one starting tonight. Checking only
+    // tonight's window paid nothing for early-morning hours.
+    double hours = 0;
+    for (final dayOffset in const [-1, 0]) {
+      final nightStart =
+          DateTime(start.year, start.month, start.day + dayOffset, 22, 0);
+      final nightEnd =
+          DateTime(start.year, start.month, start.day + dayOffset + 1, 6, 0);
+      final overlapStart = start.isAfter(nightStart) ? start : nightStart;
+      final overlapEnd =
+          effectiveEnd.isBefore(nightEnd) ? effectiveEnd : nightEnd;
+      if (overlapEnd.isAfter(overlapStart)) {
+        hours += overlapEnd.difference(overlapStart).inMinutes / 60.0;
+      }
     }
-    return 0.0;
+    return hours;
   }
 }
 

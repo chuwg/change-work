@@ -208,6 +208,18 @@ class ScheduleNotifier extends StateNotifier<ScheduleState> {
     await NotificationScheduler.rescheduleForSchedule(state);
   }
 
+  /// Rebuild the cache from the DB after a bulk write (CSV import): this month
+  /// and next, which is what the notification lookahead needs, then
+  /// reschedule so imported shifts actually get their reminders.
+  Future<void> reloadAfterImport() async {
+    state = state.copyWith(shifts: {});
+    final now = DateTime.now();
+    await loadShiftsForMonth(now.year, now.month);
+    final next = DateTime(now.year, now.month + 1, 1);
+    await loadShiftsForMonth(next.year, next.month);
+    await NotificationScheduler.rescheduleForSchedule(state);
+  }
+
   /// Wipe every cached shift (used after a full data reset) and drop the
   /// notifications that were scheduled from them.
   Future<void> clearAll() async {

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
+import '../../providers/energy_provider.dart';
 import '../../providers/health_sync_provider.dart';
 import '../../providers/schedule_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -29,7 +30,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _sleepReminder = true;
   bool _shiftReminder = true;
-  bool _healthTips = true;
   bool _motivationEnabled = false;
   int _reminderMinutes = 60;
   int _motivationHour = 7;
@@ -53,7 +53,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     setState(() {
       _sleepReminder = prefs.getBool(AppConstants.sleepReminderKey) ?? true;
       _shiftReminder = prefs.getBool(AppConstants.shiftReminderKey) ?? true;
-      _healthTips = prefs.getBool(AppConstants.healthTipsKey) ?? true;
       _motivationEnabled =
           prefs.getBool(AppConstants.motivationEnabledKey) ?? false;
       _reminderMinutes = prefs.getInt(AppConstants.reminderMinutesKey) ?? 60;
@@ -133,12 +132,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     );
     if (result != null) await _saveReminderMinutes(result);
-  }
-
-  Future<void> _saveHealthTips(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(AppConstants.healthTipsKey, value);
-    setState(() => _healthTips = value);
   }
 
   Future<void> _saveMotivation({bool? enabled, int? hour, int? minute}) async {
@@ -376,14 +369,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                   const Divider(height: 1, indent: 56),
                   _buildSwitchTile(
-                    icon: Icons.favorite_rounded,
-                    title: '건강 가이드 알림',
-                    subtitle: '맞춤 건강 팁 알림',
-                    value: _healthTips,
-                    onChanged: (v) => _saveHealthTips(v),
-                  ),
-                  const Divider(height: 1, indent: 56),
-                  _buildSwitchTile(
                     icon: Icons.format_quote_rounded,
                     title: '오늘의 한 마디',
                     subtitle: '교대근무자를 위한 동기부여 메시지',
@@ -516,7 +501,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         const SnackBar(content: Text('CSV 파일 생성 중...')),
                       );
                       try {
-                        await ExportService.instance.exportAllDataAsCsv();
+                        final exported = await ExportService.instance
+                            .exportAllDataAsCsv(origin: _shareOrigin());
+                        if (!exported && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('내보낼 기록이 없습니다')),
+                          );
+                        }
                       } catch (_) {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -548,11 +539,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             SnackBar(content: Text(msg)),
                           );
                           // Reload providers
-                          final now = DateTime.now();
                           ref
                               .read(scheduleProvider.notifier)
-                              .loadShiftsForMonth(now.year, now.month);
+                              .reloadAfterImport();
                           ref.read(sleepProvider.notifier).loadRecords();
+                          ref.read(energyProvider.notifier).loadRecords();
                         }
                       } catch (_) {
                         if (mounted) {
@@ -957,6 +948,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  /// Anchor for the iPad share popover. iPhone ignores it, but on iPad the
+  /// share sheet refuses to open without one.
+  Rect _shareOrigin() {
+    final size = MediaQuery.sizeOf(context);
+    return Rect.fromCenter(
+      center: Offset(size.width / 2, size.height / 2),
+      width: 1,
+      height: 1,
+    );
+  }
+
   void _showResetDialog() {
     showDialog(
       context: context,
@@ -980,6 +982,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Navigator.pop(context);
               await DatabaseService.instance.deleteAllData();
               ref.read(sleepProvider.notifier).loadRecords();
+              ref.read(energyProvider.notifier).loadRecords();
               // Wipe every cached month, not just the current one, so no
               // deleted shift survives in memory and gets rescheduled.
               await ref.read(scheduleProvider.notifier).clearAll();

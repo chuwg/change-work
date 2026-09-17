@@ -219,6 +219,14 @@ class DatabaseService {
     return maps.map((m) => Shift.fromMap(m)).toList();
   }
 
+  /// Every stored shift, past and future. Used for backups, where a monthly
+  /// window would silently drop schedules entered ahead of time.
+  Future<List<Shift>> getAllShifts() async {
+    final db = await database;
+    final maps = await db.query('shifts', orderBy: 'date ASC');
+    return maps.map((m) => Shift.fromMap(m)).toList();
+  }
+
   Future<Shift?> getShiftForDate(DateTime date) async {
     final db = await database;
     final dateStr = DateTime(date.year, date.month, date.day).toIso8601String();

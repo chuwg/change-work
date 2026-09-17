@@ -20,20 +20,19 @@ class ExportService {
   ExportService._internal();
 
   /// Export all data (shifts, sleep, energy) as CSV files and share.
-  Future<void> exportAllDataAsCsv() async {
+  ///
+  /// [origin] is where the share sheet anchors on iPad; without it the iPad
+  /// share sheet throws instead of opening.
+  /// Returns false when there was nothing to export.
+  Future<bool> exportAllDataAsCsv({Rect? origin}) async {
     final db = DatabaseService.instance;
     final dir = await getTemporaryDirectory();
     final dateStr = DateFormat('yyyyMMdd').format(DateTime.now());
     final files = <XFile>[];
 
-    // Get all shifts (fetch 12 months back)
-    final allShifts = <Shift>[];
-    final now = DateTime.now();
-    for (int i = 0; i < 12; i++) {
-      final date = DateTime(now.year, now.month - i, 1);
-      final monthShifts = await db.getShiftsForMonth(date.year, date.month);
-      allShifts.addAll(monthShifts);
-    }
+    // All shifts, including ones scheduled ahead — a backup that drops next
+    // month's schedule is not a backup.
+    final allShifts = await db.getAllShifts();
 
     if (allShifts.isNotEmpty) {
       final csv = StringBuffer();
@@ -90,14 +89,16 @@ class ExportService {
       files.add(XFile(file.path));
     }
 
-    if (files.isEmpty) return;
+    if (files.isEmpty) return false;
 
     await SharePlus.instance.share(
       ShareParams(
         files: files,
         subject: 'Change 앱 데이터 ($dateStr)',
+        sharePositionOrigin: origin,
       ),
     );
+    return true;
   }
 
   /// Pick CSV files and import data. Returns count of imported records per type.
@@ -144,15 +145,11 @@ class ExportService {
     if (lines.length < 2) return 0;
 
     // Get existing shift dates to skip duplicates
-    final now = DateTime.now();
-    final existingShifts = <String>{};
-    for (int i = -3; i <= 3; i++) {
-      final date = DateTime(now.year, now.month + i, 1);
-      final shifts = await db.getShiftsForMonth(date.year, date.month);
-      for (final s in shifts) {
-        existingShifts.add(DateFormat('yyyy-MM-dd').format(s.date));
-      }
-    }
+    // Checked against every stored shift: a date outside a fixed window would
+    // otherwise be overwritten by the backup's older entry.
+    final existingShifts = (await db.getAllShifts())
+        .map((s) => DateFormat('yyyy-MM-dd').format(s.date))
+        .toSet();
 
     int count = 0;
     for (int i = 1; i < lines.length; i++) {
@@ -191,10 +188,12 @@ class ExportService {
     final lines = content.trim().split('\n');
     if (lines.length < 2) return 0;
 
-    // Get existing sleep dates
-    final existing = await db.getSleepRecords(limit: 1000);
-    final existingDates =
-        existing.map((r) => DateFormat('yyyy-MM-dd').format(r.date)).toSet();
+    // Dedupe on bedtime, not date: split sleep (night + nap) legitimately
+    // puts several records on one date.
+    final existing = await db.getSleepRecords();
+    final existingBedTimes = existing
+        .map((r) => DateFormat('yyyy-MM-dd HH:mm').format(r.bedTime))
+        .toSet();
 
     int count = 0;
     for (int i = 1; i < lines.length; i++) {
@@ -205,13 +204,15 @@ class ExportService {
 
       try {
         final dateStr = cols[0].trim();
-        if (existingDates.contains(dateStr)) continue;
+        final bedStr = cols[1].trim();
+        if (!existingBedTimes.add(bedStr)) continue;
 
         final date = DateFormat('yyyy-MM-dd').parse(dateStr);
-        final bedTime = DateFormat('yyyy-MM-dd HH:mm').parse(cols[1].trim());
+        final bedTime = DateFormat('yyyy-MM-dd HH:mm').parse(bedStr);
         final wakeTime = DateFormat('yyyy-MM-dd HH:mm').parse(cols[2].trim());
         final quality = int.parse(cols[4].trim()).clamp(1, 5);
         final shiftType = cols.length > 5 ? cols[5].trim() : null;
+        final source = cols.length > 6 ? cols[6].trim() : null;
         final note = cols.length > 7 ? cols[7].trim() : null;
 
         await db.insertSleepRecord(SleepRecord(
@@ -221,6 +222,7 @@ class ExportService {
           wakeTime: wakeTime,
           quality: quality,
           shiftType: shiftType?.isEmpty == true ? null : shiftType,
+          source: source?.isEmpty == true ? null : source,
           note: note?.isEmpty == true ? null : note,
         ));
         count++;
@@ -233,6 +235,12 @@ class ExportService {
     final db = DatabaseService.instance;
     final lines = content.trim().split('\n');
     if (lines.length < 2) return 0;
+
+    // Without this, importing the same backup twice doubled every record.
+    final existing = await db.getEnergyRecords();
+    final existingStamps = existing
+        .map((r) => DateFormat('yyyy-MM-dd HH:mm').format(r.timestamp))
+        .toSet();
 
     int count = 0;
     for (int i = 1; i < lines.length; i++) {
@@ -259,6 +267,8 @@ class ExportService {
           int.parse(timeParts[0]),
           int.parse(timeParts[1]),
         );
+        final stamp = DateFormat('yyyy-MM-dd HH:mm').format(timestamp);
+        if (!existingStamps.add(stamp)) continue;
 
         await db.insertEnergyRecord(EnergyRecord(
           id: _uuid.v4(),
@@ -344,12 +354,14 @@ class ExportService {
     required int year,
     required int month,
     required Map<DateTime, Shift> shifts,
+    Rect? origin,
   }) async {
     final file = await _renderMonthImage(year, month, shifts);
     await SharePlus.instance.share(
       ShareParams(
         files: [XFile(file.path)],
         subject: '${year}년 ${month}월 근무 스케줄',
+        sharePositionOrigin: origin,
       ),
     );
   }
