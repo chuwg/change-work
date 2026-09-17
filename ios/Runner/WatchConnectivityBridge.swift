@@ -26,6 +26,14 @@ final class WatchConnectivityBridge: NSObject {
     /// Payloads that arrived before Flutter was ready to receive them.
     private var pendingInbound: [[String: Any]] = []
 
+    /// The most recent schedule snapshot Flutter asked us to publish.
+    ///
+    /// Activation is asynchronous, and the first snapshot is sent at launch —
+    /// usually before the session is up. Keeping it means it can go out the
+    /// moment activation completes, and be handed straight back when the watch
+    /// asks for a refresh.
+    private var lastContext: [String: Any]?
+
     func register(with messenger: FlutterBinaryMessenger) {
         let channel = FlutterMethodChannel(
             name: Self.channelName, binaryMessenger: messenger)
@@ -60,15 +68,16 @@ final class WatchConnectivityBridge: NSObject {
             }
         }
 
-        activate()
-
         // Anything already queued can go up as soon as Flutter attaches.
         flushInbound()
     }
 
-    private func activate() {
+    /// Bring the session up. Called on launch independently of the Flutter
+    /// channel, so the phone is reachable even before Flutter has attached.
+    func activateSession() {
         guard WCSession.isSupported() else { return }
         let session = WCSession.default
+        guard session.delegate == nil else { return }
         session.delegate = self
         session.activate()
     }
@@ -77,6 +86,7 @@ final class WatchConnectivityBridge: NSObject {
     /// no watch to send to, so the caller can stay quiet about it.
     @discardableResult
     private func sendContext(_ context: [String: Any]) -> Bool {
+        lastContext = context
         guard WCSession.isSupported() else { return false }
         let session = WCSession.default
         guard session.activationState == .activated,
@@ -115,6 +125,12 @@ extension WatchConnectivityBridge: WCSessionDelegate {
     ) {
         if let error {
             NSLog("[WatchBridge] activation failed: \(error)")
+            return
+        }
+        // The launch snapshot was almost certainly sent before this point and
+        // dropped by the activation guard. Send it now.
+        if state == .activated, let context = lastContext {
+            sendContext(context)
         }
     }
 
@@ -131,5 +147,21 @@ extension WatchConnectivityBridge: WCSessionDelegate {
 
     func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
         deliverInbound(message)
+    }
+
+    /// The watch sends `["request": "schedule"]` with a reply handler when it
+    /// opens. Without this variant WatchConnectivity routes the message to the
+    /// watch's error handler and the pull-to-refresh path does nothing.
+    func session(
+        _ session: WCSession,
+        didReceiveMessage message: [String: Any],
+        replyHandler: @escaping ([String: Any]) -> Void
+    ) {
+        if message["request"] as? String == "schedule" {
+            replyHandler(lastContext ?? [:])
+            return
+        }
+        deliverInbound(message)
+        replyHandler([:])
     }
 }

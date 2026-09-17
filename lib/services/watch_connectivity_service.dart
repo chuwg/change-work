@@ -69,7 +69,13 @@ class WatchConnectivityService {
       // the keys have to match what WidgetDataReader looks for.
       await _channel.invokeMethod<bool>('sendContext', _sanitize(data));
     } on MissingPluginException {
-      // Not iOS — nothing to do.
+      // Expected on Android. On iOS it means the native bridge never
+      // registered — which is exactly how the watch sync stayed silently
+      // broken in 1.0.12, so do not swallow it there.
+      if (kDebugMode && defaultTargetPlatform == TargetPlatform.iOS) {
+        debugPrint('[Watch] native bridge is not registered — '
+            'nothing will reach the watch');
+      }
     } on PlatformException catch (e) {
       if (kDebugMode) debugPrint('[Watch] sendContext failed: $e');
     }

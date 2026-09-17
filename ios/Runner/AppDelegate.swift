@@ -16,8 +16,15 @@ import BackgroundTasks
 
         // Watch <-> phone. App Groups do not cross devices, so this is the only
         // channel that actually reaches the watch app.
-        if let controller = window?.rootViewController as? FlutterViewController {
-            WatchConnectivityBridge.shared.register(with: controller.binaryMessenger)
+        //
+        // Registered through the plugin registry, NOT window?.rootViewController:
+        // this app uses the UIScene lifecycle, so AppDelegate.window is still nil
+        // here — the scene creates the window later. The old `if let` failed
+        // silently, the bridge never registered, WCSession was never activated
+        // on the phone, and the watch sat on "아이폰과 동기화 전이에요" forever.
+        WatchConnectivityBridge.shared.activateSession()
+        if let registrar = self.registrar(forPlugin: "WatchConnectivityBridge") {
+            WatchConnectivityBridge.shared.register(with: registrar.messenger())
         }
 
         // Register background task for periodic health sync
